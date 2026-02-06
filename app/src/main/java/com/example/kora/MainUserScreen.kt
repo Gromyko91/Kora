@@ -33,14 +33,23 @@ fun MainScreenUser(
         BottomNavItemData("profile", Icons.Rounded.Person, "Profile", activeColor = Color(0xFF3C2A21))
     )
 
+    // hide Bottom Bar Logic
+    val showBottomBar = when (currentRoute) {
+        "checkout" -> false
+        "order_success" -> false
+        else -> true
+    }
+
     Scaffold(
         containerColor = KoraBackground,
         bottomBar = {
-            KoraBottomBar(
-                navController = bottomNavController,
-                currentRoute = currentRoute,
-                items = userNavItems
-            )
+            if (showBottomBar) {
+                KoraBottomBar(
+                    navController = bottomNavController,
+                    currentRoute = currentRoute,
+                    items = userNavItems
+                )
+            }
         }
     ) { innerPadding ->
         NavHost(
@@ -62,7 +71,12 @@ fun MainScreenUser(
             composable("profile") {
                 ProfileScreen()
             }
-            composable("checkout") {}
+            composable("checkout") {
+                CheckoutScreen(
+                    onBackClick = { bottomNavController.popBackStack() },
+                    onPlaceOrderClick = { bottomNavController.navigate("order_success") }
+                )
+            }
             composable("order_success") {
                 OrderSuccessScreen(
                     onHomeClick = {

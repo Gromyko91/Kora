@@ -32,7 +32,7 @@ fun AdminMainScreen(
     val adminNavItems = listOf(
         BottomNavItemData("dashboard", Icons.Filled.Dashboard, "Home", activeColor = Color(0xFF3C2A21)),
         BottomNavItemData("orders", Icons.Filled.ShoppingBag, "Orders", activeColor = Color(0xFF3C2A21)),
-        BottomNavItemData("add_dish", Icons.Outlined.Store, "Restaurants", activeColor = Color(0xFF3C2A21)),
+        BottomNavItemData("restaurant", Icons.Outlined.Store, "Restaurants", activeColor = Color(0xFF3C2A21)),
         BottomNavItemData("profile", Icons.Filled.Person, "Profile", activeColor = Color(0xFF3C2A21))
     )
 

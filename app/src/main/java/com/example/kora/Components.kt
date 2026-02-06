@@ -1,10 +1,11 @@
 package com.example.kora
 
+import android.annotation.SuppressLint
+import android.content.pm.PackageManager
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -87,15 +88,20 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.ModifierLocalBeyondBoundsLayout
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.Placeholder
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
+import androidx.core.location.LocationManagerCompat.getCurrentLocation
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import coil.compose.rememberAsyncImagePainter
@@ -104,8 +110,15 @@ import com.example.kora.ui.theme.KoraBackground
 import com.example.kora.ui.theme.KoraButton
 import com.example.kora.ui.theme.KoraPrimary
 import com.example.kora.ui.theme.KoraText
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.FusedLocationProviderClient
+import android.location.Location
+import androidx.compose.material.icons.outlined.LocationOn
+import androidx.compose.ui.tooling.preview.Preview
+import com.example.kora.ui.theme.KoraCard
 import java.nio.file.WatchEvent
 import java.util.Locale
+import java.util.jar.Manifest
 
 @Composable
 fun KoraTextField(
@@ -1022,6 +1035,133 @@ fun AddCardSheetContent(
     }
 }
 
+@Composable
+fun AddressSheetContent(
+    onSave: (String, String) -> Unit,
+    onCancel: () -> Unit
+) {
+    val context = LocalContext.current
+    val fusedLocationClient = remember {
+        LocationServices.getFusedLocationProviderClient(context)
+    }
+
+    var nickname by remember { mutableStateOf("") }
+    var detectedLocation by remember { mutableStateOf("Detecting Location...") }
+    var isLocating by remember { mutableStateOf(false) }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            getCurrentLocation(fusedLocationClient) { lat, lng ->
+                detectedLocation = "Lat: $lat, long: $lng"
+                isLocating = false
+            }
+        } else {
+            detectedLocation = "Location permission denied"
+            isLocating = false
+        }
+    }
+
+    fun detectLocation() {
+        isLocating = true
+
+        when {
+            ContextCompat.checkSelfPermission(
+                context,
+                android.Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED -> {
+
+                getCurrentLocation(fusedLocationClient) { lat, lng ->
+                    detectedLocation = "Lat: $lat, Long: $lng"
+                    isLocating = false
+                }
+            }
+
+            else -> {
+                permissionLauncher.launch(android.Manifest.permission.ACCESS_FINE_LOCATION)
+            }
+        }
+    }
+
+    Column(
+        modifier = Modifier
+            .padding(24.dp)
+            .fillMaxWidth()
+    ) {
+        Text(
+            "Delivery Address",
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Bold,
+            color = KoraText
+        )
+        Spacer(modifier = Modifier.height(24.dp))
+        Button(
+            onClick = { detectLocation() },
+            colors = ButtonDefaults.buttonColors(containerColor = KoraAccent),
+            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Icon(Icons.Outlined.LocationOn, contentDescription = null, tint = Color.White)
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                if (isLocating) "Locating..." else "Use Current Location",
+                fontWeight = FontWeight.Bold
+            )
+        }
+
+        if (detectedLocation.isNotEmpty() && !isLocating) {
+            Text(
+                text = detectedLocation,
+                fontSize = 12.sp,
+                color = KoraText,
+                modifier = Modifier
+                    .padding(top = 8.dp, bottom = 16.dp)
+                    .align(Alignment.CenterHorizontally)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        OutlinedTextField(
+            value = nickname,
+            onValueChange = { nickname = it },
+            label = { Text("Address Nickname (e.g, Home, Work)") },
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        Button(
+            onClick = { onSave(nickname, detectedLocation) },
+            colors = ButtonDefaults.buttonColors(containerColor = KoraButton),
+            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp)
+        ) {
+            Text("Save Address", fontWeight = FontWeight.Bold)
+        }
+    }
+}
+
+// Get Location Helper
+@SuppressLint("MissingPermission")
+fun getCurrentLocation(
+    fusedLocationClient: FusedLocationProviderClient,
+    onLocationReceived: (Double, Double) -> Unit
+) {
+    fusedLocationClient.lastLocation
+        .addOnSuccessListener { location: Location? ->
+            if (location != null) {
+                onLocationReceived(location.latitude, location.latitude)
+            }
+        }
+        .addOnFailureListener {
+            it.printStackTrace()
+        }
+}
 
 
 
