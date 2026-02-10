@@ -69,7 +69,13 @@ fun MainScreenUser(
                 )
             }
             composable("profile") {
-                ProfileScreen()
+                ProfileScreen(
+                    onLogout = {
+                        rootNavController.navigate("login") {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    }
+                )
             }
             composable("checkout") {
                 CheckoutScreen(

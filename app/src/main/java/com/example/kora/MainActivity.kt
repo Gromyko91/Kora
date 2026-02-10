@@ -84,14 +84,15 @@ fun KoraApp() {
                 }
                 composable("login") {
                     LoginScreen(
-                        onLoginClick = {
-                            navController.navigate("main") {
+                        onLoginClick = { role ->
+                            val destination = if (role == "admin") "admin_main" else "main"
+                            navController.navigate(destination ) {
                                 popUpTo("login") { inclusive = true }
                             }
                         },
                         onForgotPassword = { navController.navigate("forgot") },
                         onSignUpClick = { navController.navigate("signup") },
-                        onAdminClick = { navController.navigate("admin_main") }
+//                        onAdminClick = { navController.navigate("admin_main") }
                     )
                 }
                 composable("signup") {

@@ -92,7 +92,13 @@ fun AdminMainScreen(
                 )
             }
             composable("profile") {
-                ProfileScreen()
+                ProfileScreen(
+                    onLogout = {
+                        adminNavController.navigate("login") {
+                            popUpTo(0) { inclusive = true}
+                        }
+                    }
+                )
             }
         }
     }

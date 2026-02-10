@@ -2,6 +2,7 @@ package com.example.kora
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -30,18 +31,41 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.kora.data.auth.AuthViewModel
 import com.example.kora.ui.theme.KoraBackground
 import com.example.kora.ui.theme.KoraButton
 import com.example.kora.ui.theme.KoraText
 
 @Composable
-fun ProfileScreen() {
+fun ProfileScreen(
+    onLogout: () -> Unit
+) {
+    val viewModel: AuthViewModel = viewModel()
+    val user by viewModel.currentUser.collectAsState()
+
+    LaunchedEffect(Unit) {
+        viewModel.fetchCurrentUser()
+    }
+
+    val initials = if (user != null && user!!.firstName.isNotEmpty() && user!!.lastName.isNotEmpty()) {
+        "${user!!.firstName.first()}${user!!.lastName.first()}".uppercase()
+    } else {
+        ""
+    }
+
+    val fullName = if (user != null) "${user!!.firstName} ${user!!.lastName}" else "Loading..."
+    val email = user?.email ?: ""
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -50,10 +74,26 @@ fun ProfileScreen() {
             .padding(15.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
-            Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = "Logout", tint = KoraText)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Spacer(modifier = Modifier.size(24.dp))
+            Text(text = "Profile", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = KoraText)
+            Icon(
+                Icons.AutoMirrored.Filled.ExitToApp,
+                contentDescription = "Logout",
+                tint = KoraText,
+                modifier = Modifier
+                    .size(28.dp)
+                    .clickable {
+                        viewModel.logout()
+                        onLogout()
+                    }
+            )
         }
-        Text(text = "Profile", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = KoraText)
+
         Spacer(modifier = Modifier.height(24.dp))
         Box(
             modifier = Modifier
@@ -61,11 +101,11 @@ fun ProfileScreen() {
                 .background(KoraText, CircleShape),
             contentAlignment = Alignment.Center
         ) {
-            Text(text = "CN", fontSize = 32.sp, fontWeight = FontWeight.Bold, color = KoraBackground)
+            Text(text = initials, fontSize = 32.sp, fontWeight = FontWeight.Bold, color = KoraBackground)
         }
         Spacer(modifier = Modifier.height(16.dp))
-        Text(text = "Caroline Ndeti", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = KoraText)
-        Text(text = "ndeti@email.com", fontSize = 14.sp, color = KoraText.copy(alpha = 0.7f))
+        Text(text = fullName, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = KoraText)
+        Text(text = email, fontSize = 14.sp, color = KoraText.copy(alpha = 0.7f))
 
         Spacer(modifier = Modifier.height(16.dp))
 

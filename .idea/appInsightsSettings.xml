@@ -8,10 +8,10 @@
             <InsightsFilterSettings>
               <option name="connection">
                 <ConnectionSetting>
-                  <option name="appId" value="PLACEHOLDER" />
-                  <option name="mobileSdkAppId" value="" />
-                  <option name="projectId" value="" />
-                  <option name="projectNumber" value="" />
+                  <option name="appId" value="com.example.kora" />
+                  <option name="mobileSdkAppId" value="1:397131380904:android:ae17ac02fee681bb582a9d" />
+                  <option name="projectId" value="kora-bafed" />
+                  <option name="projectNumber" value="397131380904" />
                 </ConnectionSetting>
               </option>
               <option name="signal" value="SIGNAL_UNSPECIFIED" />

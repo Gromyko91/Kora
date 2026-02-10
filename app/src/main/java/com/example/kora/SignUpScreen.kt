@@ -1,6 +1,7 @@
 package com.example.kora
 
 import android.R
+import android.util.Log
 import android.util.Patterns
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -20,18 +22,26 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavHostController
+import com.example.kora.data.auth.AuthState
+import com.example.kora.data.auth.AuthViewModel
 import com.example.kora.ui.theme.KoraAccent
 import com.example.kora.ui.theme.KoraBackground
 import com.example.kora.ui.theme.KoraButton
@@ -43,6 +53,11 @@ fun SignUpScreen(
     onSignInClick: () -> Unit,
     onValidationError: (String) -> Unit
 ) {
+    val viewModel: AuthViewModel = viewModel()
+    val authState by viewModel.authState.collectAsState()
+
+    val context = LocalContext.current
+
 //    var name by remember { mutableStateOf("") }
     var firstName by remember { mutableStateOf("") }
     var lastName by remember { mutableStateOf("") }
@@ -56,21 +71,35 @@ fun SignUpScreen(
     var isEmailError by remember { mutableStateOf(false) }
     var isPhoneError by remember { mutableStateOf(false) }
 
+    LaunchedEffect(authState) {
+        when (authState) {
+            is AuthState.Success -> {
+                onSignUpClick()
+                viewModel.resetState()
+            }
+            is AuthState.Error -> {
+                onValidationError((authState as AuthState.Error).message)
+                viewModel.resetState()
+            }
+            else -> {}
+        }
+    }
+
     fun validateAndSignUp() {
         isEmailError = false
-        isPhoneError = false
+    isPhoneError = false
 
-        val isValidEmail = Patterns.EMAIL_ADDRESS.matcher(email).matches()
-        val isValidPhone = countryCode.isNotEmpty() && phoneNumber.isNotEmpty()
+    val isValidEmail = Patterns.EMAIL_ADDRESS.matcher(email).matches()
+    val isValidPhone = countryCode.isNotEmpty() && phoneNumber.isNotEmpty()
 
-        if (!isValidEmail) {
-            isEmailError = true
-            onValidationError("Please enter a valid email address!")
-            return
-        }
+    if (!isValidEmail) {
+        isEmailError = true
+        onValidationError("Please enter a valid email!")
+        return
+    }
         if (!isValidPhone) {
             isPhoneError = true
-            onValidationError("Please complete the phone number.")
+            onValidationError("Please complete the phone number")
             return
         }
 
@@ -83,8 +112,10 @@ fun SignUpScreen(
             onValidationError("Please accept the terms and conditions.")
             return
         }
-        onSignUpClick
+
+        viewModel.signUp(firstName, lastName, email, "$countryCode$phoneNumber", password)
     }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -162,14 +193,20 @@ fun SignUpScreen(
         }
         Spacer(modifier = Modifier.height(24.dp))
         Button(
-            onClick = { validateAndSignUp() },
+            onClick = {
+                validateAndSignUp()
+            },
             colors = ButtonDefaults.buttonColors(containerColor = KoraButton),
             shape = RoundedCornerShape(16.dp),
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp)
         ) {
-            Text(text="Sign me Up", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+            if (authState is AuthState.Loading) {
+                CircularProgressIndicator(color = KoraText, modifier = Modifier.size(24.dp))
+            } else {
+                Text(text="Sign me Up", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+            }
         }
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -183,7 +220,7 @@ fun SignUpScreen(
                 text = "Sign In",
                 color = KoraAccent,
                 fontWeight = FontWeight.Bold,
-                modifier = Modifier.clickable { onSignInClick() }
+//                modifier = Modifier.clickable { onSignInClick() }
             )
         }
     }

@@ -11,12 +11,16 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -27,6 +31,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.kora.data.auth.AuthState
+import com.example.kora.data.auth.AuthViewModel
 import com.example.kora.ui.theme.KoraAccent
 import com.example.kora.ui.theme.KoraBackground
 import com.example.kora.ui.theme.KoraButton
@@ -34,13 +41,31 @@ import com.example.kora.ui.theme.KoraText
 
 @Composable
 fun LoginScreen(
-    onLoginClick: () -> Unit,
+    onLoginClick: (String) -> Unit,
     onForgotPassword: () -> Unit,
-    onSignUpClick: () -> Unit,
-    onAdminClick: () -> Unit
+    onSignUpClick: () -> Unit
+//    onAdminClick: () -> Unit
 ) {
+
+    val viewModel: AuthViewModel = viewModel()
+    val authState by viewModel.authState.collectAsState()
+
     var email by remember { mutableStateOf("") }
     var password by remember {mutableStateOf("")}
+
+    LaunchedEffect(authState) {
+        when (authState) {
+            is AuthState.Success -> {
+                val role = (authState as AuthState.Success).role
+                onLoginClick(role)
+                viewModel.resetState()
+            }
+            is AuthState.Error -> {
+                viewModel.resetState()
+            }
+            else -> {}
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -85,26 +110,30 @@ fun LoginScreen(
         }
         Spacer(modifier = Modifier.height(32.dp))
         Button(
-            onClick = onLoginClick,
+            onClick = { viewModel.signIn(email, password) },
             colors = ButtonDefaults.buttonColors(containerColor = KoraButton),
             shape = RoundedCornerShape(16.dp),
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp)
         ) {
-            Text(text = "Sign In", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+            if (authState is AuthState.Loading) {
+                CircularProgressIndicator(color = KoraText, modifier = Modifier.size(24.dp))
+            } else {
+                Text(text = "Sign In", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+            }
         }
         Spacer(modifier = Modifier.height(16.dp))
-        Button(
-            onClick = onAdminClick,
-            colors = ButtonDefaults.buttonColors(containerColor = KoraButton),
-            shape = RoundedCornerShape(16.dp),
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp)
-        ) {
-            Text(text = "To admin page", fontSize = 18.sp, fontWeight = FontWeight.Bold)
-        }
+//        Button(
+//            onClick = onAdminClick,
+//            colors = ButtonDefaults.buttonColors(containerColor = KoraButton),
+//            shape = RoundedCornerShape(16.dp),
+//            modifier = Modifier
+//                .fillMaxWidth()
+//                .height(56.dp)
+//        ) {
+//            Text(text = "To admin page", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+//        }
         Spacer(modifier = Modifier.height(24.dp))
         Row(
             modifier = Modifier.fillMaxWidth(),
