@@ -60,6 +60,14 @@ class DishViewModel : ViewModel() {
         Log.d(TAG, "Resetting add state")
         _addDishState.value = UiState.Idle
     }
+
+    fun toggleAvailability(dishId: String, currentStatus: Boolean) {
+        repository.updateDishAvailability(dishId, !currentStatus, {}, {})
+    }
+
+    fun deleteDish(dishId: String, restaurantId: String, imageUrl: String) {
+        repository.deleteDish(dishId, restaurantId, imageUrl, {}, {})
+    }
 }
 
 sealed class UiState {

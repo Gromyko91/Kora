@@ -119,6 +119,51 @@ class DishRepository {
             registration.remove()
         }
     }
+
+    fun updateDish(
+        dishId: String,
+        updates: Map<String, Any>,
+        onSuccess: () -> Unit,
+        onError: (String) -> Unit
+    ) {
+        db.collection("dishes").document(dishId)
+            .update(updates)
+            .addOnSuccessListener { onSuccess() }
+            .addOnFailureListener { onError(it.message ?: "Update Failed") }
+    }
+
+    fun updateDishAvailability(
+        dishId: String,
+        isAvailable: Boolean,
+        onSuccess: () -> Unit,
+        onError: (String) -> Unit
+    ) {
+        db.collection("dishes").document(dishId)
+            .update("available", isAvailable)
+            .addOnSuccessListener { onSuccess() }
+            .addOnFailureListener { onError(it.message ?: "Failed to update availability") }
+    }
+
+    fun deleteDish(
+        dishId: String,
+        restaurantId: String,
+        imageUrl: String,
+        onSuccess: () -> Unit,
+        onError: (String) -> Unit
+    ) {
+        if (imageUrl.isNotEmpty()) {
+            storage.getReferenceFromUrl(imageUrl).delete()
+        }
+
+        db.collection("dishes").document(dishId)
+            .delete()
+            .addOnSuccessListener {
+                db.collection("restaurants").document(restaurantId)
+                    .update("dishCount", FieldValue.increment(-1))
+                    .addOnSuccessListener { onSuccess() }
+            }
+            .addOnFailureListener { onError(it.message ?: "Delete Failed") }
+    }
 }
 
 

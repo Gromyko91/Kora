@@ -51,6 +51,10 @@ fun AdminRestaurantScreen(
     val restaurants by viewModel.restaurants.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
 
+//    Delete Dialog State
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    var restaurantToDelete by remember { mutableStateOf<Restaurant?>(null) }
+
     val filteredRestaurants = restaurants.filter {
         it.name.contains(searchQuery, ignoreCase = true)
     }
@@ -114,9 +118,28 @@ fun AdminRestaurantScreen(
                     imageUrl = restaurant.imageUrl,
                     onClick = { onRestaurantClick(restaurant) },
                     onEditClick = { },
-                    onViewMealsClick = {}
+                    onDeleteClick = {
+                        restaurantToDelete = restaurant
+                        showDeleteDialog = true
+                    }
                 )
             }
         }
+    }
+
+    if (showDeleteDialog && restaurantToDelete != null) {
+        ConfirmationDialog(
+            title = "Delete Restaurant",
+            message = "Are you sure you eant to delete ${restaurantToDelete?.name}? This action cannot be undone.",
+            onConfirm = {
+                viewModel.deleteRestaurant(restaurantToDelete!!)
+                showDeleteDialog = false
+                restaurantToDelete = null
+            },
+            onDismiss = {
+                showDeleteDialog = false
+                restaurantToDelete = null
+            }
+        )
     }
 }

@@ -44,6 +44,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.kora.data.dishes.DishViewModel
+import com.example.kora.data.model.Dish
 import com.example.kora.data.model.Restaurant
 import com.example.kora.ui.theme.KoraBackground
 import com.example.kora.ui.theme.KoraButton
@@ -55,13 +56,16 @@ import com.google.firebase.firestore.FirebaseFirestore
 fun RestaurantDetailsScreen(
     restaurantId: String,
     onBackClick: () -> Unit,
-    onAddDishClick: () -> Unit
+    onAddDishClick: () -> Unit,
 ) {
     val dishViewModel: DishViewModel = viewModel()
     val dishes by dishViewModel.dishes.collectAsState()
 
     var restaurant by remember { mutableStateOf<Restaurant?>(null) }
     var isLoading by remember { mutableStateOf(true) }
+
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    var dishToDelete by remember { mutableStateOf<Dish?>(null) }
 
     LaunchedEffect(restaurantId) {
         if (restaurantId.isNotEmpty()) {
@@ -179,13 +183,35 @@ fun RestaurantDetailsScreen(
                                 imageUrl = dish.imageUrl,
                                 allergens = dish.allergens,
                                 isAvailable = dish.isAvailable,
-                                onToggleAvailability = {},
-                                onEditClick = {}
+                                onToggleAvailability = {
+                                    dishViewModel.toggleAvailability(dish.id, dish.isAvailable)
+                                },
+                                onEditClick = {},
+                                onDeleteClick = {
+                                    dishToDelete = dish
+                                    showDeleteDialog = true
+                                }
                             )
                         }
                     }
                 }
             }
+        }
+
+        if (showDeleteDialog && dishToDelete != null) {
+            ConfirmationDialog(
+                title = "Delete Dish?",
+                message = "Are you sure you want to delete ${dishToDelete?.name}",
+                onConfirm = {
+                    dishViewModel.deleteDish(dishToDelete!!.id, dishToDelete!!.restaurantId, dishToDelete!!.imageUrl)
+                    showDeleteDialog = false
+                    dishToDelete = null
+                },
+                onDismiss = {
+                    showDeleteDialog = false
+                    dishToDelete = null
+                }
+            )
         }
     }
 }

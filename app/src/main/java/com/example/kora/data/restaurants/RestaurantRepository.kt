@@ -110,4 +110,35 @@ class RestaurantRepository {
 
         awaitClose { subscription.remove() }
     }
+
+    fun updateRestaurant(
+        restaurantId: String,
+        updates: Map<String, Any>,
+        onSuccess: () -> Unit,
+        onError: (String) -> Unit
+    ) {
+        db.collection("restaurants").document(restaurantId)
+            .update(updates)
+            .addOnSuccessListener {
+                Log.d(TAG, "Restaurant updated successfully")
+                onSuccess()
+            }
+            .addOnFailureListener { onError(it.message ?: "Update Failed") }
+    }
+
+    fun deleteRestaurant(
+        restaurantId: String,
+        imageUrl: String,
+        onSuccess: () -> Unit,
+        onError: (String) -> Unit
+    ) {
+        if (imageUrl.isNotEmpty()) {
+            val imageRef = storage.getReferenceFromUrl(imageUrl)
+            imageRef.delete().addOnFailureListener { Log.w(TAG, "Failed to delete image: $it") }
+        }
+        db.collection("restaurants").document(restaurantId)
+            .delete()
+            .addOnSuccessListener { onSuccess() }
+            .addOnFailureListener { onError(it.message ?: "Delete failed") }
+    }
 }

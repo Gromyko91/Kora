@@ -10,7 +10,6 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -114,9 +113,12 @@ import com.example.kora.ui.theme.KoraText
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.FusedLocationProviderClient
 import android.location.Location
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.Store
+import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.ui.tooling.preview.Preview
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
@@ -681,7 +683,7 @@ fun RestaurantCard(
     imageUrl: String,
     onClick: () -> Unit,
     onEditClick: () -> Unit,
-    onViewMealsClick: () -> Unit
+    onDeleteClick: () -> Unit
 ) {
     Card(
         modifier = Modifier
@@ -767,14 +769,14 @@ fun RestaurantCard(
                 }
                 Spacer(modifier = Modifier.width(12.dp))
                 Button(
-                    onClick = onViewMealsClick,
+                    onClick = onDeleteClick,
                     shape = RoundedCornerShape(8.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = KoraAccent),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFEBEE)),
                     modifier = Modifier.weight(1f).height(40.dp)
                 ) {
-                    Icon(Icons.Outlined.LunchDining, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
+                    Icon(Icons.Outlined.Delete, contentDescription = null, tint = Color.Red, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("View Meals", color = Color.White)
+                    Text("Delete", color = Color.Red)
                 }
             }
         }
@@ -833,7 +835,8 @@ fun DishItemRow(
     allergens: List<String>,
     isAvailable: Boolean,
     onToggleAvailability: (Boolean) -> Unit,
-    onEditClick: () -> Unit
+    onEditClick: () -> Unit,
+    onDeleteClick: () -> Unit
 ) {
     Card(
         modifier = Modifier
@@ -889,7 +892,7 @@ fun DishItemRow(
                     }
                     Switch(
                         checked = isAvailable,
-                        onCheckedChange = onToggleAvailability,
+                        onCheckedChange = { onToggleAvailability(it) },
                         colors = SwitchDefaults.colors(
                             checkedThumbColor = KoraText,
                             checkedTrackColor = KoraButton,
@@ -928,13 +931,17 @@ fun DishItemRow(
                         }
                     }
                 }
-                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.BottomEnd) {
-                    Icon(
-                        Icons.Rounded.Edit,
-                        contentDescription = "Edit",
-                        tint = Color.Gray,
-                        modifier = Modifier.size(16.dp).clickable { onEditClick() }
-                    )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    IconButton(onClick = onEditClick, modifier = Modifier.size(24.dp)) {
+                        Icon(Icons.Rounded.Edit, null, tint = Color.Gray)
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    IconButton(onClick = onDeleteClick, modifier = Modifier.size(24.dp)) {
+                        Icon(Icons.Rounded.Delete, null, tint = Color.Red.copy(alpha = 0.7f))
+                    }
                 }
             }
         }
