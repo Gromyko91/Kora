@@ -109,7 +109,7 @@ fun AdminRestaurantScreen(
                 RestaurantCard(
                     name = restaurant.name,
                     cuisine = restaurant.cuisine,
-                    dishes = "0",
+                    dishes = restaurant.dishCount.toString(),
                     rating = "N/A",
                     imageUrl = restaurant.imageUrl,
                     onClick = { onRestaurantClick(restaurant) },

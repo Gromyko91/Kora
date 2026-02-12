@@ -38,10 +38,10 @@ fun AdminMainScreen(
         BottomNavItemData("profile", Icons.Filled.Person, "Profile", activeColor = Color(0xFF3C2A21))
     )
 
-    val showBottomBar = when (currentRoute) {
-        "add_restaurant" -> false
-        "restaurant_details" -> false
-        "add_dish" -> false
+    val showBottomBar = when {
+        currentRoute == "add_restaurant" -> false
+        currentRoute?.startsWith("restaurant_details") == true -> false
+        currentRoute?.startsWith("add_dish") == true -> false
         else -> true
     }
 
@@ -84,18 +84,20 @@ fun AdminMainScreen(
                 )
             }
 
-            composable("restaurant_details/{restaurantId") { backStackEntry ->
-                val restaurantId = backStackEntry.arguments?.getString("retsaurantId")
+            composable("restaurant_details/{restaurantId}") { backStackEntry ->
+                val restaurantId = backStackEntry.arguments?.getString("restaurantId")
 
                 RestaurantDetailsScreen(
                     restaurantId = restaurantId ?: "",
                     onBackClick = { adminNavController.popBackStack() },
-                    onAddDishClick = { adminNavController.navigate("add_dish") }
+                    onAddDishClick = { adminNavController.navigate("add_dish/$restaurantId") }
                 )
             }
 
-            composable("add_dish") {
+            composable("add_dish/{restaurantId}") { backStackEntry ->
+                val restaurantId = backStackEntry.arguments?.getString("restaurantId") ?: ""
                 AddDishScreen(
+                    restaurantId = restaurantId,
                     onBackClick = { adminNavController.popBackStack() },
                     onSaveClick = { adminNavController.popBackStack() }
                 )

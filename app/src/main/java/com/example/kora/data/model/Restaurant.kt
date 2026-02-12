@@ -9,6 +9,7 @@ data class Restaurant(
     val openingTime: String = "",
     val closingTime: String = "",
     val imageUrl: String = "",
+    val dishCount: Int = 0,
 
 //    Audit Logs
     val createdBy: String = "",

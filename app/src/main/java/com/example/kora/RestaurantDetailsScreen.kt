@@ -23,11 +23,15 @@ import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -38,9 +42,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.kora.data.dishes.DishViewModel
+import com.example.kora.data.model.Restaurant
 import com.example.kora.ui.theme.KoraBackground
 import com.example.kora.ui.theme.KoraButton
+import com.example.kora.ui.theme.KoraCard
 import com.example.kora.ui.theme.KoraText
+import com.google.firebase.firestore.FirebaseFirestore
 
 @Composable
 fun RestaurantDetailsScreen(
@@ -48,101 +57,134 @@ fun RestaurantDetailsScreen(
     onBackClick: () -> Unit,
     onAddDishClick: () -> Unit
 ) {
-//    Mock Data
-    val dishes = listOf(
-        Triple("Spicy Arrabbiata", "Ksh 1400", "Fresh tomato sauce with garlic, dried red chili peppers."),
-        Triple("Truffle Risotto", "Ksh 1850", "Creamy arborio rice with black truffle oil and parmesan."),
-        Triple("Classic Tiramisu", "Ksh 900", "Coffee-soaked ladyfingers with mascarpone cream."),
-        Triple("Caprese Salad", "Ksh 1200", "Sliced fresh mozzarella, tomatoes, and sweet basil."),
-        Triple("Caprese Salad", "Ksh 1200", "Sliced fresh mozzarella, tomatoes, and sweet basil."),
-        Triple("Caprese Salad", "Ksh 1200", "Sliced fresh mozzarella, tomatoes, and sweet basil."),
-        Triple("Caprese Salad", "Ksh 1200", "Sliced fresh mozzarella, tomatoes, and sweet basil."),
-        Triple("Caprese Salad", "Ksh 1200", "Sliced fresh mozzarella, tomatoes, and sweet basil.")
-    )
+    val dishViewModel: DishViewModel = viewModel()
+    val dishes by dishViewModel.dishes.collectAsState()
+
+    var restaurant by remember { mutableStateOf<Restaurant?>(null) }
+    var isLoading by remember { mutableStateOf(true) }
+
+    LaunchedEffect(restaurantId) {
+        if (restaurantId.isNotEmpty()) {
+            FirebaseFirestore.getInstance()
+                .collection("restaurants")
+                .document(restaurantId)
+                .get()
+                .addOnSuccessListener { document ->
+                    restaurant = document.toObject(Restaurant::class.java)
+                    isLoading = false
+                }
+                .addOnFailureListener {
+                    isLoading = false
+                }
+        }
+        dishViewModel.fetchDishes(restaurantId)
+    }
 
     Scaffold(
         containerColor = KoraBackground,
         topBar = {
-            Column(modifier = Modifier.background(KoraBackground)) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "back", tint = KoraText)
-                    }
-                    Text(
-                        text = "Ndeti's Kibanda",
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = KoraText
-                    )
-                    IconButton(onClick = {}) {
-                        Icon(Icons.Rounded.Search, contentDescription = "Search", tint = KoraText)
-                    }
-                }
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 24.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(text = "24 Items Listed", fontSize = 14.sp, color = Color.Gray)
+            if (restaurant != null) {
+                Column(modifier = Modifier.background(KoraBackground)) {
                     Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.clickable { /* Filter */ }
+//                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text(text = "Filter", fontSize = 14.sp, color = KoraButton, fontWeight = FontWeight.Bold)
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Icon(Icons.Default.FilterList, contentDescription = null, tint = KoraButton, modifier = Modifier.size(16.dp))
+                        IconButton(onClick = onBackClick) {
+                            Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "back", tint = KoraText)
+                        }
+                        Text(
+                            text = restaurant!!.name,
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = KoraText
+                        )
+//                        IconButton(onClick = {}) {
+//                            Icon(Icons.Rounded.Search, contentDescription = "Search", tint = KoraText)
+//                        }
                     }
+//                    Row(
+//                        modifier = Modifier
+//                            .fillMaxWidth()
+//                            .padding(horizontal = 24.dp, vertical = 8.dp),
+//                        horizontalArrangement = Arrangement.SpaceBetween,
+//                        verticalAlignment = Alignment.CenterVertically
+//                    ) {
+//                        Text(text = "24 Items Listed", fontSize = 14.sp, color = Color.Gray)
+//                        Row(
+//                            verticalAlignment = Alignment.CenterVertically,
+//                            modifier = Modifier.clickable { /* Filter */ }
+//                        ) {
+//                            Text(text = "Filter", fontSize = 14.sp, color = KoraButton, fontWeight = FontWeight.Bold)
+//                            Spacer(modifier = Modifier.width(4.dp))
+//                            Icon(Icons.Default.FilterList, contentDescription = null, tint = KoraButton, modifier = Modifier.size(16.dp))
+//                        }
+//                    }
                 }
             }
         },
-        bottomBar = {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(24.dp)
-                    .background(Color.Transparent)
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = onAddDishClick,
+                containerColor = KoraButton,
+                contentColor = KoraBackground
             ) {
-                Button(
-                    onClick = onAddDishClick,
-                    colors = ButtonDefaults.buttonColors(containerColor = KoraButton),
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp)
-                ) {
-                    Icon(Icons.Rounded.Add, contentDescription = null, tint = Color.White)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(text = "Add New Meal", fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                }
+                Icon(Icons.Rounded.Add, contentDescription = "Add Dish")
             }
         }
     ) { innerPadding ->
-        LazyColumn(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
-                .padding(horizontal = 24.dp)
+                .padding(innerPadding),
+            contentAlignment = Alignment.Center
         ) {
-            items(dishes.size) { index ->
-                val (name, price, desc) = dishes[index]
-                var isAvailable by remember { mutableStateOf(index != 1) }
-
-                DishItemRow(
-                    name = name,
-                    price = price,
-                    description = desc,
-                    isAvailable = isAvailable,
-                    onToggleAvailability = { isAvailable = it },
-                    onEditClick = {}
-                )
+            if (isLoading) {
+                CircularProgressIndicator(color = KoraButton)
+            } else if (restaurant == null) {
+                Text("Restaurant not found", color = KoraText)
+            } else {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 24.dp)
+                ) {
+                    item {
+                        Text("Cuisine: ${restaurant!!.cuisine}", fontSize = 16.sp, color = KoraText)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text("Operating Hours: ${restaurant!!.openingTime} - ${restaurant!!.closingTime}", fontSize = 14.sp, color = KoraText)
+                        Spacer(modifier = Modifier.height(24.dp))
+                        Text("Menu", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = KoraText)
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
+                    if (dishes.isEmpty()) {
+                        item {
+                            Box(
+                                modifier = Modifier.fillMaxWidth(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text("No dishes added yet.", color = KoraText.copy(alpha = 0.5f), fontSize = 14.sp)
+                            }
+                        }
+                    } else {
+                        items(dishes.size) { index ->
+                            val dish = dishes[index]
+                            DishItemRow(
+                                name = dish.name,
+                                category = dish.category,
+                                price = dish.price,
+                                description = dish.description,
+                                imageUrl = dish.imageUrl,
+                                allergens = dish.allergens,
+                                isAvailable = dish.isAvailable,
+                                onToggleAvailability = {},
+                                onEditClick = {}
+                            )
+                        }
+                    }
+                }
             }
         }
     }

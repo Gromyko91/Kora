@@ -114,6 +114,7 @@ import com.example.kora.ui.theme.KoraText
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.FusedLocationProviderClient
 import android.location.Location
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.Store
 import androidx.compose.ui.tooling.preview.Preview
@@ -825,8 +826,11 @@ fun DottedUploadBox(
 @Composable
 fun DishItemRow(
     name: String,
+    category: String,
     price: String,
     description: String,
+    imageUrl: String,
+    allergens: List<String>,
     isAvailable: Boolean,
     onToggleAvailability: (Boolean) -> Unit,
     onEditClick: () -> Unit
@@ -850,17 +854,38 @@ fun DishItemRow(
                     .size(80.dp)
                     .clip(RoundedCornerShape(12.dp))
                     .background(KoraPrimary.copy(alpha = 0.3f))
-            )
+            ) {
+                if (imageUrl.isNotEmpty()) {
+                    AsyncImage(
+                        model = imageUrl,
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else {
+                    Box(modifier = Modifier.fillMaxSize().background(Color.Gray.copy(0.2f)))
+                }
+            }
             Spacer(modifier = Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
+                if (category.isNotEmpty()) {
+                    Text(
+                        text = category.uppercase(),
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = KoraButton.copy(alpha = 0.6f),
+                        letterSpacing =  1.sp
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                }
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.Top
+//                    verticalAlignment = Alignment.Top
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(text = name, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = KoraText)
-                        Text(text = price, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = KoraButton)
+                        Text(text = "Ksh $price", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = KoraButton)
                     }
                     Switch(
                         checked = isAvailable,
@@ -882,6 +907,27 @@ fun DishItemRow(
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
+                Spacer(modifier = Modifier.height(8.dp))
+                if (allergens.isNotEmpty()) {
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        allergens.forEach { allergen ->
+                            Surface(
+                                color = Color(0xFFFFF3E0),
+                                shape = RoundedCornerShape(4.dp)
+                            ) {
+                                Text(
+                                    text = allergen,
+                                    fontSize = 10.sp,
+                                    color = Color(0xFFE65100),
+                                    modifier = Modifier.padding(horizontal = 6.dp)
+                                )
+                            }
+                        }
+                    }
+                }
                 Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.BottomEnd) {
                     Icon(
                         Icons.Rounded.Edit,
