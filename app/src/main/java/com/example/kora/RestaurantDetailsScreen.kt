@@ -44,6 +44,7 @@ import com.example.kora.ui.theme.KoraText
 
 @Composable
 fun RestaurantDetailsScreen(
+    restaurantId: String,
     onBackClick: () -> Unit,
     onAddDishClick: () -> Unit
 ) {

@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -23,20 +24,37 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.kora.data.model.Restaurant
+import com.example.kora.data.restaurants.RestaurantViewModel
 import com.example.kora.ui.theme.KoraAccent
 import com.example.kora.ui.theme.KoraBackground
 import com.example.kora.ui.theme.KoraText
 
 @Composable
 fun AdminRestaurantScreen(
-    onAddRestaurantClick: () -> Unit
+    onAddRestaurantClick: () -> Unit,
+    onRestaurantClick: (Restaurant) -> Unit
 ) {
+    val viewModel: RestaurantViewModel = viewModel()
+    val restaurants by viewModel.restaurants.collectAsState()
+    var searchQuery by remember { mutableStateOf("") }
+
+    val filteredRestaurants = restaurants.filter {
+        it.name.contains(searchQuery, ignoreCase = true)
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -65,8 +83,8 @@ fun AdminRestaurantScreen(
         }
         Spacer(modifier = Modifier.height(24.dp))
         TextField(
-            value = "",
-            onValueChange = {},
+            value = searchQuery,
+            onValueChange = { searchQuery = it },
             placeholder = { Text("Search by name...", color = KoraText.copy(alpha = 0.6f)) },
             leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null, tint = KoraText.copy(alpha = 0.6f)) },
             modifier = Modifier.fillMaxWidth(),
@@ -83,63 +101,19 @@ fun AdminRestaurantScreen(
         LazyColumn(
             contentPadding = PaddingValues(bottom = 100.dp)
         ) {
-            item {
-                RestaurantCard(
-                    name = "The Burger Joint",
-                    cuisine = "American • Fast Food",
-                    dishes = "24",
-                    rating = "4.8",
-                    onEditClick = {},
-                    onViewMealsClick = {}
-                )
+            if (filteredRestaurants.isEmpty()) {
+                item { Text("No restaurants found", color = KoraText) }
             }
-            item {
+
+            items(filteredRestaurants) { restaurant ->
                 RestaurantCard(
-                    name = "Pasta Paradise",
-                    cuisine = "Italian • Gourmet",
-                    dishes = "12",
-                    rating = "4.7",
-                    onEditClick = {},
-                    onViewMealsClick = {}
-                )
-            }
-            item {
-                RestaurantCard(
-                    name = "Sushi Master",
-                    cuisine = "Japanese • Sushi",
-                    dishes = "10",
-                    rating = "4.9",
-                    onEditClick = {},
-                    onViewMealsClick = {}
-                )
-            }
-            item {
-                RestaurantCard(
-                    name = "The Burger Joint",
-                    cuisine = "American • Fast Food",
-                    dishes = "24",
-                    rating = "4.8",
-                    onEditClick = {},
-                    onViewMealsClick = {}
-                )
-            }
-            item {
-                RestaurantCard(
-                    name = "The Burger Joint",
-                    cuisine = "American • Fast Food",
-                    dishes = "24",
-                    rating = "4.8",
-                    onEditClick = {},
-                    onViewMealsClick = {}
-                )
-            }
-            item {
-                RestaurantCard(
-                    name = "The Burger Joint",
-                    cuisine = "American • Fast Food",
-                    dishes = "24",
-                    rating = "4.8",
-                    onEditClick = {},
+                    name = restaurant.name,
+                    cuisine = restaurant.cuisine,
+                    dishes = "0",
+                    rating = "N/A",
+                    imageUrl = restaurant.imageUrl,
+                    onClick = { onRestaurantClick(restaurant) },
+                    onEditClick = { },
                     onViewMealsClick = {}
                 )
             }

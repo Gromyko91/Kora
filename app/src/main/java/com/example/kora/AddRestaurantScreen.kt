@@ -3,6 +3,7 @@ package com.example.kora
 import android.R.attr.text
 import androidx.compose.material3.AlertDialog
 import android.net.Uri
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -33,6 +34,7 @@ import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.KeyboardArrowUp
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -48,6 +50,8 @@ import androidx.compose.material3.TimePicker
 //import androidx.compose.material3.TimePickerDialog
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -57,11 +61,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.rememberAsyncImagePainter
+import com.example.kora.data.restaurants.RestaurantUiState
+import com.example.kora.data.restaurants.RestaurantViewModel
 import com.example.kora.ui.theme.KoraAccent
 import com.example.kora.ui.theme.KoraBackground
 import com.example.kora.ui.theme.KoraButton
@@ -75,16 +83,16 @@ fun AddRestaurantScreen(
     onBackClick: () -> Unit,
     onSaveClick: () -> Unit
 ) {
+    val viewModel: RestaurantViewModel = viewModel()
+    val uiState by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
+
     var name by remember { mutableStateOf("") }
     var deliveryFee by remember { mutableStateOf("") }
     var estTime by remember { mutableStateOf("") }
 
 //    Image Picker State
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
-    val photoPickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.PickVisualMedia(),
-        onResult = { uri -> selectedImageUri = uri }
-    )
 
 //    Cuisine Dropdown State
     var cuisineExpanded by remember { mutableStateOf(false) }
@@ -97,7 +105,27 @@ fun AddRestaurantScreen(
     var showOpeningPicker by remember { mutableStateOf(false) }
     var showClosingPicker by remember { mutableStateOf(false) }
 
-//    Helper to format Time
+    LaunchedEffect(uiState) {
+        when (uiState) {
+            is RestaurantUiState.Success -> {
+                Toast.makeText(context, "Restaurant Added Successfully!", Toast.LENGTH_LONG).show()
+                viewModel.resetState()
+                onSaveClick()
+            }
+            is RestaurantUiState.Error -> {
+                Toast.makeText(context, (uiState as RestaurantUiState.Error).message, Toast.LENGTH_LONG).show()
+                viewModel.resetState()
+            }
+            else -> {}
+        }
+    }
+
+//    Helper functions
+    val photoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia(),
+        onResult = { uri -> selectedImageUri = uri }
+    )
+
     val timeFormatter = remember { { hour: Int, min: Int ->
         val amPm = if (hour >= 12) "PM" else "AM"
         val hour12 = if (hour > 12) hour - 12 else if (hour == 0) 12 else hour
@@ -356,7 +384,15 @@ fun AddRestaurantScreen(
             Spacer(modifier = Modifier.height(40.dp))
 
             Button(
-                onClick = onSaveClick,
+                onClick = {
+                    if (name.isNotEmpty() && selectedCuisine.isNotEmpty()) {
+                        viewModel.saveRestaurant(
+                            name, selectedCuisine, deliveryFee, estTime, openingTime, closingTime, selectedImageUri
+                        )
+                    } else {
+                        Toast.makeText(context, "Please fill in all the required fields", Toast.LENGTH_LONG).show()
+                    }
+                },
                 colors = ButtonDefaults.buttonColors(containerColor = KoraButton),
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier
@@ -366,6 +402,17 @@ fun AddRestaurantScreen(
                 Text(text = "Save Restaurant", fontSize = 16.sp, fontWeight = FontWeight.Bold)
             }
             Spacer(modifier = Modifier.height(24.dp))
+        }
+    }
+    if (uiState is RestaurantUiState.Loading) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.5f))
+                .clickable(enabled = false) {},
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator(color = KoraAccent)
         }
     }
 }

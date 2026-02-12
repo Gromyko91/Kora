@@ -1,5 +1,6 @@
 package com.example.kora
 
+import android.R.attr.onClick
 import android.annotation.SuppressLint
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -114,7 +115,10 @@ import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.FusedLocationProviderClient
 import android.location.Location
 import androidx.compose.material.icons.outlined.LocationOn
+import androidx.compose.material.icons.outlined.Store
 import androidx.compose.ui.tooling.preview.Preview
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.example.kora.ui.theme.KoraCard
 import java.nio.file.WatchEvent
 import java.util.Locale
@@ -673,12 +677,15 @@ fun RestaurantCard(
     cuisine: String,
     dishes: String,
     rating: String,
+    imageUrl: String,
+    onClick: () -> Unit,
     onEditClick: () -> Unit,
     onViewMealsClick: () -> Unit
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
+            .clickable { onClick() }
             .padding(bottom = 16.dp),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -690,9 +697,27 @@ fun RestaurantCard(
                     modifier = Modifier
                         .size(80.dp)
                         .clip(RoundedCornerShape(12.dp))
-                        .background(Color.Gray.copy(alpha = 0.3f))
+                        .background(Color.Gray.copy(alpha = 0.1f)),
+                    contentAlignment = Alignment.Center
                 ) {
-//                    Placeholder for restaurant image
+                    if (imageUrl.isNotEmpty()) {
+                        AsyncImage(
+                            model = ImageRequest.Builder(LocalContext.current)
+                                .data(imageUrl)
+                                .crossfade(true)
+                                .build(),
+                            contentDescription = "Restaurant Image",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.Outlined.Store,
+                            contentDescription = null,
+                            tint = Color.Gray.copy(alpha = 0.5f),
+                            modifier = Modifier.size(32.dp)
+                        )
+                    }
                 }
                 Spacer(modifier = Modifier.width(16.dp))
                 Column(modifier = Modifier.weight(1f)) {
@@ -700,7 +725,7 @@ fun RestaurantCard(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text(text = name, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = KoraText)
+                        Text(text = name, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = KoraText, maxLines = 1)
 
                         Surface(
                             shape = RoundedCornerShape(8.dp),

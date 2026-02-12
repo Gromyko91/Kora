@@ -12,12 +12,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.example.kora.data.restaurants.RestaurantViewModel
 import com.example.kora.ui.theme.KoraBackground
 import com.example.kora.ui.theme.KoraButton
 
@@ -67,8 +69,12 @@ fun AdminMainScreen(
                 AdminOrdersScreen()
             }
             composable("restaurant") {
+                val viewModel: RestaurantViewModel = viewModel()
                 AdminRestaurantScreen(
-                    onAddRestaurantClick = { adminNavController.navigate("add_restaurant") }
+                    onAddRestaurantClick = { adminNavController.navigate("add_restaurant") },
+                    onRestaurantClick = { restaurant ->
+                        adminNavController.navigate("restaurant_details/${restaurant.id}")
+                    }
                 )
             }
             composable("add_restaurant") {
@@ -78,8 +84,11 @@ fun AdminMainScreen(
                 )
             }
 
-            composable("restaurant_details") {
+            composable("restaurant_details/{restaurantId") { backStackEntry ->
+                val restaurantId = backStackEntry.arguments?.getString("retsaurantId")
+
                 RestaurantDetailsScreen(
+                    restaurantId = restaurantId ?: "",
                     onBackClick = { adminNavController.popBackStack() },
                     onAddDishClick = { adminNavController.navigate("add_dish") }
                 )
