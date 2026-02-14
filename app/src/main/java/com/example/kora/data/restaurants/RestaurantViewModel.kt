@@ -5,13 +5,20 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.kora.data.model.Restaurant
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.storage.FirebaseStorage
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
 class RestaurantViewModel : ViewModel() {
     private val repository = RestaurantRepository()
+    private val auth = FirebaseAuth.getInstance()
+
+    private val _favouriteIds = MutableStateFlow<Set<String>>(emptySet())
+    val favouriteIds: StateFlow<Set<String>> = _favouriteIds
 
     private val _uiState = MutableStateFlow<RestaurantUiState>(RestaurantUiState.Idle)
     val uiState: StateFlow<RestaurantUiState> = _uiState
@@ -47,12 +54,24 @@ class RestaurantViewModel : ViewModel() {
 
     init {
         fetchRestaurants()
+        listenToFavourites()
     }
 
     private fun fetchRestaurants() {
         viewModelScope.launch {
             repository.getRestaurants().collect { list ->
                 _restaurants.value = list
+            }
+        }
+    }
+
+    private fun listenToFavourites() {
+        val userId = auth.currentUser?.uid
+        if (userId != null) {
+            viewModelScope.launch {
+                repository.getFavouriteRestaurantIds(userId).collect { ids ->
+                    _favouriteIds.value = ids
+                }
             }
         }
     }
@@ -122,6 +141,21 @@ class RestaurantViewModel : ViewModel() {
                 _uiState.value = RestaurantUiState.Error(error)
             }
             )
+    }
+
+    val favouriteRestaurants: Flow<List<Restaurant>> = combine(_restaurants, _favouriteIds) { all, ids ->
+        all.filter { it.id in ids }
+    }
+
+    fun toggleFavourite(restaurantId: String) {
+        val userId = auth.currentUser?.uid ?: return
+        val isFavourite = _favouriteIds.value.contains(restaurantId)
+        repository.toggleFavourite(userId, restaurantId, isFavourite)
+    }
+
+    fun removeFromFavourites(restaurantId: String) {
+        val userId = auth.currentUser?.uid ?: return
+        repository.toggleFavourite(userId, restaurantId, isCurrentlyFavourite = true)
     }
 }
 

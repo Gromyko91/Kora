@@ -113,16 +113,26 @@ import com.example.kora.ui.theme.KoraText
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.FusedLocationProviderClient
 import android.location.Location
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.outlined.AccessTime
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.Store
 import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.tooling.preview.Preview
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.example.kora.data.model.Dish
+import com.example.kora.data.model.Restaurant
+import com.example.kora.ui.theme.KoraBox
 import com.example.kora.ui.theme.KoraCard
+import com.example.kora.utils.TimeUtils
 import java.nio.file.WatchEvent
 import java.util.Locale
 import java.util.jar.Manifest
@@ -245,18 +255,18 @@ fun PhoneInputRow(
 // Cart Items
 @Composable
 fun CartItemRow(
-    title: String,
-    subtitle: String,
-    price: String,
+    dish: Dish,
     quantity: Int,
-    imageResId: Int? = null
+    onIncrease: () -> Unit,
+    onDecrease: () -> Unit,
+    onRemove: () -> Unit
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(bottom = 16.dp),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = KoraCard),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(
@@ -271,7 +281,14 @@ fun CartItemRow(
                     .clip(RoundedCornerShape(12.dp))
                     .background(Color.Gray.copy(alpha = 0.3f))
             ) {
-
+                if (dish.imageUrl.isNotEmpty()) {
+                    AsyncImage(
+                        model = dish.imageUrl,
+                        contentDescription = dish.name,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
             }
             Spacer(modifier = Modifier.width(16.dp))
 
@@ -280,10 +297,10 @@ fun CartItemRow(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text(text = title, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = KoraText)
-                    Text(text = price, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = KoraText)
+                    Text(text = dish.name, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = KoraText)
+                    Text(text = "Ksh ${dish.price}", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = KoraText)
                 }
-                Text(text = subtitle, fontSize = 12.sp, color = Color.Gray)
+                Text(text = dish.description, fontSize = 12.sp, color = Color.Gray, maxLines = 2, overflow = TextOverflow.Ellipsis )
                 Spacer(modifier = Modifier.height(12.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -295,7 +312,7 @@ fun CartItemRow(
                         modifier = Modifier
                             .background(Color(0xFFE0E0E0), RoundedCornerShape(8.dp))
                     ) {
-                        IconButton(onClick = {  }, modifier = Modifier.size(32.dp)) {
+                        IconButton(onClick = onDecrease, enabled = quantity > 1, modifier = Modifier.size(32.dp)) {
                             Icon(Icons.Rounded.Remove, contentDescription = "Decrease", tint = KoraText, modifier = Modifier.size(16.dp))
                         }
                         Text(text = quantity.toString(), fontWeight = FontWeight.Bold, fontSize = 14.sp, color = KoraText, modifier = Modifier.padding(horizontal = 8.dp))
@@ -303,14 +320,14 @@ fun CartItemRow(
                             modifier = Modifier
                                 .size(32.dp)
                                 .background(KoraAccent, RoundedCornerShape(8.dp))
-                                .clickable {  },
+                                .clickable { onIncrease() },
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(Icons.Rounded.Add, contentDescription = "Increase", tint = Color.White, modifier = Modifier.size(16.dp))
                         }
                     }
-                    IconButton(onClick = {  }) {
-                        Icon(Icons.TwoTone.Delete, contentDescription = "Delete", tint = KoraText, modifier = Modifier.size(24.dp))
+                    IconButton(onClick = onRemove) {
+                        Icon(Icons.Rounded.Delete, contentDescription = "Delete", tint = KoraText, modifier = Modifier.size(24.dp))
                     }
                 }
             }
@@ -1239,6 +1256,380 @@ fun getCurrentLocation(
         .addOnFailureListener {
             it.printStackTrace()
         }
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+fun UserRestaurantCard(
+    restaurant: Restaurant,
+    isFavourite: Boolean,
+    onRestaurantClick: (String) -> Unit,
+    onToggleFavourite: (String) -> Unit
+    ) {
+    val isOpen = TimeUtils.isRestaurantOpen(restaurant.openingTime, restaurant.closingTime)
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(220.dp)
+            .padding(bottom = 16.dp)
+            .clickable(enabled = isOpen) {
+                onRestaurantClick(restaurant.id)
+            },
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(restaurant.imageUrl)
+                    .crossfade(true)
+                    .build(),
+                contentDescription = restaurant.name,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+            )
+
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.8f)),
+                            startY = 100f
+                        )
+                    )
+            )
+
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    IconButton(
+                        onClick = { onToggleFavourite(restaurant.id) },
+                        modifier = Modifier
+                            .background(Color.White.copy(alpha = 0.3f), CircleShape)
+                            .size(36.dp)
+                    ) {
+                        Icon(
+                            imageVector = if (isFavourite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                            contentDescription = "Toggle Favorite",
+                            tint = if (isFavourite) KoraAccent else Color.White
+                        )
+                    }
+                }
+
+                Column {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = restaurant.name,
+                            color = KoraCard,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 20.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f)
+                        )
+
+                        Surface(
+                            color = KoraButton,
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            ) {
+                                Text(
+                                    // Use restaurant.rating if available, else N/A
+                                    text = "N/A",
+                                    color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                Icon(Icons.Filled.Star, null, tint = Color.White, modifier = Modifier.size(14.dp))
+                            }
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(text = restaurant.cuisine, color = Color.LightGray, fontSize = 12.sp)
+                        Text(text = " | ", color = Color.LightGray)
+                        Text(text = TimeUtils.formatCurrency(restaurant.deliveryFee) + " Delivery", color = Color.LightGray, fontSize = 12.sp)
+                    }
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "Closes at ${restaurant.closingTime}",
+                        color = KoraAccent,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            }
+            if (!isOpen) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.7f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "CLOSED",
+                        color = KoraBackground,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 24.sp,
+                        letterSpacing = 2.sp
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun FavouriteRestaurantCard(
+    restaurant: Restaurant,
+    onNavigateToDetails: () -> Unit,
+    onRemoveClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 16.dp)
+            .padding(16.dp)
+            .clickable { onNavigateToDetails() },
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column {
+            Box(modifier = Modifier.height(160.dp).fillMaxWidth()) {
+                AsyncImage(
+                    model = ImageRequest.Builder(LocalContext.current)
+                        .data(restaurant.imageUrl)
+                        .crossfade(true)
+                        .build(),
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
+                )
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(12.dp)
+                        .background(Color.White, CircleShape)
+                        .size(32.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Favorite,
+                        contentDescription = "Favourite",
+                        tint = Color.Red,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+                Row(
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = Color.White
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Icons.Filled.Star, null, tint = Color(0xFF4CAF50), modifier = Modifier.size(14.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "N/A", // Replace with restaurant.rating when available
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = KoraText
+                            )
+                        }
+                    }
+                    Surface(
+                        color = Color(0xFFE8F5E9),
+                        shape = RoundedCornerShape(4.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Icons.Outlined.AccessTime, null, tint = KoraText, modifier = Modifier.size(14.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = restaurant.estTime,
+                                fontSize = 12.sp,
+                                color = Color(0xFF2E7D32),
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
+                }
+
+            }
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    text = restaurant.name,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = KoraText
+                )
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+
+            // Cuisine & Price
+            Text(
+                text = "${restaurant.cuisine} • $$",
+                color = Color.Gray,
+                fontSize = 14.sp
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Delivery Info
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                // Small Truck Icon or just text
+                Text(text = restaurant.deliveryFee, fontSize = 12.sp, color = KoraText.copy(alpha = 0.7f))
+                Text(text = "  •  ", color = Color.Gray)
+                Text(text = "1.2 km away", fontSize = 12.sp, color = KoraText.copy(alpha = 0.7f))
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // --- BUTTONS ROW ---
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                // Order Again Button (Takes full available width minus remove button)
+                Button(
+                    onClick = onNavigateToDetails,
+                    colors = ButtonDefaults.buttonColors(containerColor = KoraAccent),
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.weight(1f).height(45.dp)
+                ) {
+                    Text("Order Again", color = Color.White, fontWeight = FontWeight.Bold)
+                }
+
+                // Remove Button
+                OutlinedButton(
+                    onClick = onRemoveClick,
+                    shape = RoundedCornerShape(8.dp),
+                    border = BorderStroke(1.dp, Color.LightGray.copy(alpha = 0.5f)),
+                    modifier = Modifier.width(100.dp).height(45.dp)
+                ) {
+                    Text("Remove", color = KoraAccent, fontSize = 12.sp)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun DishUserCard(
+    dish: Dish,
+    onAddClick: () -> Unit
+) {
+    Card(
+        colors = CardDefaults.cardColors(containerColor = KoraCard),
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(dish.imageUrl)
+                    .crossfade(true)
+                    .build(),
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .size(90.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(Color.Gray.copy(0.1f))
+            )
+            Spacer(modifier = Modifier.width(16.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = dish.name,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = KoraText,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Text(
+                        text = "Ksh ${dish.price}",
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = KoraPrimary
+                    )
+                }
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = dish.description,
+                    fontSize = 13.sp,
+                    color = Color.Gray,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        dish.allergens.take(3).forEach { allergen ->
+                            Surface(
+//                                color = Color(0xFFE0F2F1),
+                                color = KoraBox,
+                                shape = RoundedCornerShape(4.dp)
+                            ) {
+                                Text(
+                                    text = allergen,
+//                                    color = Color(0xFF00695C),
+                                    color = KoraBackground,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                )
+                            }
+                        }
+                    }
+                    Button(
+                        onClick = onAddClick,
+                        colors = ButtonDefaults.buttonColors(containerColor = KoraButton),
+                        shape = RoundedCornerShape(8.dp),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp)
+                    ) {
+                        Text("Add", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = KoraBackground)
+                    }
+                }
+            }
+        }
+    }
 }
 
 

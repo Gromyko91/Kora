@@ -42,6 +42,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
@@ -73,6 +74,7 @@ import coil.compose.rememberAsyncImagePainter
 import com.example.kora.data.dishes.DishViewModel
 import com.example.kora.data.dishes.UiState
 import com.example.kora.ui.theme.KoraBackground
+import com.example.kora.ui.theme.KoraBox
 import com.example.kora.ui.theme.KoraButton
 import com.example.kora.ui.theme.KoraCard
 import com.example.kora.ui.theme.KoraText
@@ -99,13 +101,13 @@ fun AddDishScreen(
     // Dropdown State
     var categoryExpanded by remember { mutableStateOf(false) }
     var selectedCategory by remember { mutableStateOf("Main Course") }
-    var categories = listOf("Main Course", "Appetizer", "Dessert", "Beverage", "Side")
+    var categories = listOf("Main Course", "Appetizer", "Drinks","Dessert", "Beverage", "Side", "Salad")
 
     var prepTimeExpanded by remember { mutableStateOf(false) }
     var selectedPrepTime by remember { mutableStateOf("") }
     val prepTimeOptions = (10..60 step 5).map { "$it mins" }
 
-    var allergenOptions = listOf("Nuts", "Dairy", "Gluten", "Shellfish", "Eggs", "Soy")
+    var allergenOptions = listOf("Nuts", "Dairy", "Gluten", "Eggs", "Soy")
     val selectedAllergens = remember { mutableStateListOf<String>() }
 
     // Image Picker
@@ -298,43 +300,6 @@ fun AddDishScreen(
             )
             Spacer(modifier = Modifier.height(16.dp))
 
-            // New Fields Row: Prep Time & Allergens
-//            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-//                Column(modifier = Modifier.weight(1f)) {
-//                    Text("Prep Time", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = KoraText)
-//                    Spacer(modifier = Modifier.height(8.dp))
-//                    OutlinedTextField(
-//                        value = prepTime,
-//                        onValueChange = { prepTime = it },
-//                        placeholder = { Text("e.g. 15m", color = Color.Gray) },
-//                        modifier = Modifier.fillMaxWidth(),
-//                        shape = RoundedCornerShape(12.dp),
-//                        colors = OutlinedTextFieldDefaults.colors(
-//                            focusedContainerColor = KoraBackground,
-//                            unfocusedContainerColor = KoraBackground,
-//                            focusedBorderColor = KoraText,
-//                            unfocusedBorderColor = KoraText
-//                        )
-//                    )
-//                }
-//                Column(modifier = Modifier.weight(1f)) {
-//                    Text("Allergens", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = KoraText)
-//                    Spacer(modifier = Modifier.height(8.dp))
-//                    OutlinedTextField(
-//                        value = allergens,
-//                        onValueChange = { allergens = it },
-//                        placeholder = { Text("e.g. Nuts", color = Color.Gray) },
-//                        modifier = Modifier.fillMaxWidth(),
-//                        shape = RoundedCornerShape(12.dp),
-//                        colors = OutlinedTextFieldDefaults.colors(
-//                            focusedContainerColor = KoraBackground,
-//                            unfocusedContainerColor = KoraBackground,
-//                            focusedBorderColor = KoraText,
-//                            unfocusedBorderColor = KoraText
-//                        )
-//                    )
-//                }
-//            }
             ExposedDropdownMenuBox(
                 expanded = prepTimeExpanded,
                 onExpandedChange = { prepTimeExpanded = !prepTimeExpanded }
@@ -376,10 +341,14 @@ fun AddDishScreen(
                             if (isSelected) selectedAllergens.remove(allergen)
                             else selectedAllergens.add(allergen)
                         },
-                        label = { Text(allergen) },
+                        label = { Text(allergen, color = if (isSelected) KoraBackground else KoraText) },
                         leadingIcon = if (isSelected) {
-                            { Icon(Icons.Rounded.Check, null, modifier = Modifier.size(16.dp))}
-                        } else null
+                            { Icon(Icons.Rounded.Check, null, modifier = Modifier.size(16.dp), tint = KoraBackground)}
+                        } else null,
+                        colors = FilterChipDefaults.filterChipColors(
+                            containerColor = KoraBackground,
+                            selectedContainerColor = KoraBox
+                        )
                     )
                 }
             }

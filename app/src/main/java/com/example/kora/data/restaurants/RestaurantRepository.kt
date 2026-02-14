@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.compose.runtime.snapshotFlow
 import com.example.kora.data.model.Restaurant
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.channels.awaitClose
@@ -109,6 +110,31 @@ class RestaurantRepository {
             }
 
         awaitClose { subscription.remove() }
+    }
+
+    fun toggleFavourite(userId: String, restaurantId: String, isCurrentlyFavourite: Boolean) {
+        val favouritesRef = db.collection("users").document(userId).collection("favourites").document(restaurantId)
+        if (isCurrentlyFavourite) {
+            favouritesRef.delete()
+        } else {
+            favouritesRef.set(mapOf("timestamp" to FieldValue.serverTimestamp()))
+        }
+    }
+
+    fun getFavouriteRestaurantIds(userId: String): Flow<Set<String>> = callbackFlow {
+        val listener = db.collection("users").document(userId).collection("favourites")
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    return@addSnapshotListener
+                }
+                if (snapshot != null) {
+                    val ids = snapshot.documents.map { it.id }.toSet()
+                    trySend(ids)
+                } else {
+                    trySend(emptySet())
+                }
+            }
+        awaitClose { listener.remove() }
     }
 
     fun updateRestaurant(

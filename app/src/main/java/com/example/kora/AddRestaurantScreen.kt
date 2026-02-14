@@ -97,7 +97,7 @@ fun AddRestaurantScreen(
 //    Cuisine Dropdown State
     var cuisineExpanded by remember { mutableStateOf(false) }
     var selectedCuisine by remember { mutableStateOf("") }
-    val cuisineOptions = listOf("Local Kenyan", "Fast Food", "Chinese", "Indian", "Grills and BBQ", "Cafe & Breakfast", "Dessert & Bakery")
+    val cuisineOptions = listOf("Local Kenyan", "Fast Food", "Chinese", "Indian", "Liquor", "Grills and BBQ", "Cafe & Breakfast", "Dessert & Bakery")
 
 //    Time Picker State
     var openingTime by remember { mutableStateOf("09:00 AM") }
