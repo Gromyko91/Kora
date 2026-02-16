@@ -1,5 +1,6 @@
 package com.example.kora
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -29,6 +30,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -39,6 +41,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -48,27 +52,62 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
+import com.example.kora.data.cart.CartViewModel
+import com.example.kora.data.model.Address
+import com.example.kora.data.order.CheckoutUiState
+import com.example.kora.data.order.CheckoutViewModel
 import com.example.kora.ui.theme.KoraAccent
 import com.example.kora.ui.theme.KoraBackground
 import com.example.kora.ui.theme.KoraButton
+import com.example.kora.ui.theme.KoraCard
+import com.example.kora.ui.theme.KoraPrimary
 import com.example.kora.ui.theme.KoraText
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CheckoutScreen(
+    cartViewModel: CartViewModel,
     onBackClick: () -> Unit,
-    onPlaceOrderClick: () -> Unit
+    onPlaceOrderClick: (String, String) -> Unit
 ) {
+    val checkoutViewModel: CheckoutViewModel = viewModel()
+    val context = LocalContext.current
+
+    val cartItems by cartViewModel.cartItems.collectAsState()
+    val cartTotal by cartViewModel.cartTotal.collectAsState(initial = 0.0)
+
+    val checkoutState by checkoutViewModel.uiState.collectAsState()
+    val estTime by checkoutViewModel.estTime.collectAsState()
+    val fetchedDeliveryFee by checkoutViewModel.deliveryFee.collectAsState()
+    val isFetchingFee by checkoutViewModel.isFetchingFee.collectAsState()
+
+    LaunchedEffect(cartItems) {
+        val restaurantId = cartItems.keys.firstOrNull()?.restaurantId
+        if (restaurantId != null) {
+            checkoutViewModel.fetchDeliveryFee(restaurantId)
+        }
+    }
+
+    val taxRate = 0.16
+    val taxAmount = cartTotal * taxRate
+    val finalTotal = cartTotal + taxAmount + fetchedDeliveryFee
+
     // State for Sheets
     var showAddressSheet by remember { mutableStateOf(false) }
     var showCardSheet by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     // State for Data
-    var deliveryAddress by remember { mutableStateOf("123 Earthy Lane, Foodie City, CA") }
+    var deliveryAddress by remember {
+        mutableStateOf(Address(nickname = "Home", street = "Kasarani", city = "Nairobi"))
+    }
     var addressLabel by remember { mutableStateOf("Home") }
 
     var selectedPaymentMethod by remember { mutableStateOf("Card") } // "Card", "Mpesa", "Cash"
@@ -77,14 +116,36 @@ fun CheckoutScreen(
     val savedCards = remember { mutableStateListOf(Pair("Visa", "4242")) }
     var selectedCardIndex by remember { mutableStateOf(0) }
 
+    LaunchedEffect(checkoutState) {
+        when(checkoutState) {
+            is CheckoutUiState.Success -> {
+                cartViewModel.clearCart()
+                val orderId = (checkoutState as CheckoutUiState.Success).orderId
+                checkoutViewModel.resetState()
+                onPlaceOrderClick(orderId, estTime)
+            }
+            is CheckoutUiState.Error -> {
+                Toast.makeText(context, (checkoutState as CheckoutUiState.Error).message, Toast.LENGTH_LONG).show()
+                checkoutViewModel.resetState()
+            }
+            else -> {}
+        }
+    }
+
     // --- BOTTOM SHEETS ---
     if (showAddressSheet) {
         ModalBottomSheet(onDismissRequest = { showAddressSheet = false }, sheetState = sheetState, containerColor = Color.White) {
             AddressSheetContent(
-                onSave = { nick, addr ->
-                    addressLabel = nick.ifEmpty { "New Address" }
-                    deliveryAddress = addr
+                onSave = { nick, addrString ->
+                    deliveryAddress = deliveryAddress.copy(
+                        nickname = nick.ifEmpty { "New Address" },
+                        street = addrString,
+                        city = "Nairobi"
+                    )
                     showAddressSheet = false
+//                    addressLabel = nick.ifEmpty { "New Address" }
+//                    deliveryAddress = addr
+//                    showAddressSheet = false
                 },
                 onCancel = { showAddressSheet = false }
             )
@@ -116,14 +177,30 @@ fun CheckoutScreen(
                     .padding(24.dp)
             ) {
                 Button(
-                    onClick = onPlaceOrderClick,
+                    onClick = {
+                        checkoutViewModel.submitOrder(
+                            cartItems = cartItems,
+                            subtotal = cartTotal,
+                            tax = taxAmount,
+                            total = finalTotal,
+                            paymentMethod = selectedPaymentMethod,
+                            address = deliveryAddress
+                        )
+                    },
+                    enabled = checkoutState !is CheckoutUiState.Loading && !isFetchingFee && cartItems.isNotEmpty(),
                     colors = ButtonDefaults.buttonColors(containerColor = KoraButton),
                     shape = RoundedCornerShape(16.dp),
-                    modifier = Modifier.fillMaxWidth().height(56.dp)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp)
                 ) {
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("Place Order", fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                        Text("$17.70", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                    if (checkoutState is CheckoutUiState.Loading) {
+                        CircularProgressIndicator(color = KoraPrimary, modifier = Modifier.size(24.dp))
+                    } else {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text("Place Order", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                            Text(cartViewModel.formatTotal(finalTotal), fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                        }
                     }
                 }
             }
@@ -170,15 +247,17 @@ fun CheckoutScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Box(
-                                modifier = Modifier.size(40.dp).background(Color(0xFFFDE8E4), CircleShape),
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .background(Color(0xFFFDE8E4), CircleShape),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(Icons.Filled.LocationOn, contentDescription = null, tint = KoraButton)
                             }
                             Spacer(modifier = Modifier.width(16.dp))
                             Column(modifier = Modifier.weight(1f)) {
-                                Text(addressLabel, fontWeight = FontWeight.Bold, color = KoraText)
-                                Text(deliveryAddress, fontSize = 12.sp, color = Color.Gray, maxLines = 1)
+                                Text(deliveryAddress.nickname, fontWeight = FontWeight.Bold, color = KoraText)
+                                Text("${deliveryAddress.street}, ${deliveryAddress.city}", fontSize = 12.sp, color = Color.Gray, maxLines = 1)
                             }
                             Icon(
                                 Icons.Default.Edit,
@@ -201,25 +280,56 @@ fun CheckoutScreen(
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
                             // Item 1
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Box(modifier = Modifier.size(50.dp).clip(RoundedCornerShape(8.dp)).background(Color.Gray.copy(alpha=0.3f)))
-                                Spacer(modifier = Modifier.width(12.dp))
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text("Spicy Pumpkin Soup", fontWeight = FontWeight.Bold, color = KoraText)
-                                    Text("2x", fontSize = 12.sp, color = Color.Gray)
+//
+//                            Spacer(modifier = Modifier.height(16.dp))
+//                            // Item 2
+//                            Row(verticalAlignment = Alignment.CenterVertically) {
+//                                Box(modifier = Modifier
+//                                    .size(50.dp)
+//                                    .clip(RoundedCornerShape(8.dp))
+//                                    .background(Color.Gray.copy(alpha = 0.3f)))
+//                                Spacer(modifier = Modifier.width(12.dp))
+//                                Column(modifier = Modifier.weight(1f)) {
+//                                    Text("Sourdough Bread", fontWeight = FontWeight.Bold, color = KoraText)
+//                                    Text("1x", fontSize = 12.sp, color = Color.Gray)
+//                                }
+//                                Text("$4.50", fontWeight = FontWeight.Bold, color = KoraText)
+//                            }
+                            cartItems.forEach { (dish, qty) ->
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.padding(bottom = 16.dp)
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(50.dp)
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .background(KoraCard.copy(alpha = 0.1f))
+                                    ) {
+                                        if (dish.imageUrl.isNotEmpty()) {
+                                            AsyncImage(
+                                                model = dish.imageUrl,
+                                                contentDescription = null,
+                                                contentScale = ContentScale.Crop,
+                                                modifier = Modifier.fillMaxSize()
+                                            )
+                                        }
+                                    }
+                                    Spacer(modifier = Modifier.width(12.dp))
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            dish.name,
+                                            fontWeight = FontWeight.Bold,
+                                            color = KoraText
+                                        )
+                                        Text("${qty}x", fontSize = 12.sp, color = KoraAccent)
+                                    }
+                                    Text(
+                                        "ksh ${dish.price}",
+                                        fontWeight = FontWeight.Bold,
+                                        color = KoraText
+                                    )
                                 }
-                                Text("$12.00", fontWeight = FontWeight.Bold, color = KoraText)
-                            }
-                            Spacer(modifier = Modifier.height(16.dp))
-                            // Item 2
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Box(modifier = Modifier.size(50.dp).clip(RoundedCornerShape(8.dp)).background(Color.Gray.copy(alpha=0.3f)))
-                                Spacer(modifier = Modifier.width(12.dp))
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text("Sourdough Bread", fontWeight = FontWeight.Bold, color = KoraText)
-                                    Text("1x", fontSize = 12.sp, color = Color.Gray)
-                                }
-                                Text("$4.50", fontWeight = FontWeight.Bold, color = KoraText)
                             }
                         }
                     }
@@ -279,22 +389,27 @@ fun CheckoutScreen(
                         Column(modifier = Modifier.padding(16.dp)) {
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                 Text("Subtotal", color = Color.Gray)
-                                Text("$16.50", fontWeight = FontWeight.Bold, color = KoraText)
+                                Text(cartViewModel.formatTotal(cartTotal), fontWeight = FontWeight.Bold, color = KoraText)
                             }
                             Spacer(modifier = Modifier.height(8.dp))
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                 Text("Delivery Fee", color = Color.Gray)
-                                Text("Free", fontWeight = FontWeight.Bold, color = KoraAccent)
+                                if (isFetchingFee) {
+                                    Text("...", color = Color.Gray)
+                                } else {
+                                    val feeText = if (fetchedDeliveryFee == 0.0) "Free" else cartViewModel.formatTotal(fetchedDeliveryFee)
+                                    Text(feeText, fontWeight = FontWeight.Bold, color = KoraAccent)
+                                }
                             }
                             Spacer(modifier = Modifier.height(8.dp))
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                Text("Tax", color = Color.Gray)
-                                Text("$1.20", fontWeight = FontWeight.Bold, color = KoraText)
+                                Text("Tax (16%)", color = Color.Gray)
+                                Text(cartViewModel.formatTotal(taxAmount), fontWeight = FontWeight.Bold, color = KoraText)
                             }
                             Divider(modifier = Modifier.padding(vertical = 12.dp), color = Color.LightGray.copy(alpha=0.3f))
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                 Text("Total", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = KoraText)
-                                Text("$17.70", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = KoraButton)
+                                Text(cartViewModel.formatTotal(finalTotal), fontWeight = FontWeight.Bold, fontSize = 18.sp, color = KoraButton)
                             }
                         }
                     }

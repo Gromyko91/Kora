@@ -40,6 +40,8 @@ import com.example.kora.ui.theme.KoraText
 
 @Composable
 fun OrderSuccessScreen(
+    orderId: String,
+    estTime: String,
     onHomeClick: () -> Unit
 ) {
     Column(
@@ -91,8 +93,8 @@ fun OrderSuccessScreen(
             color = KoraCard
         ) {
             Text(
-                text = "ORDER #ORD-8921",
-                fontSize = 12.sp,
+                text = "ORDER #$orderId",
+                fontSize = 14.sp,
                 color = KoraBox,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
@@ -111,7 +113,7 @@ fun OrderSuccessScreen(
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            text = "Your delicious meal is on its way.\nEstimated delivery: 25-35 mins.",
+            text = "Your delicious meal is on its way.\nEstimated delivery: $estTime mins.",
             fontSize = 14.sp,
             color = Color.Gray,
             textAlign = TextAlign.Center,
@@ -131,10 +133,10 @@ fun OrderSuccessScreen(
     }
 }
 
-@Preview
-@Composable
-fun OrderSuccessPreview() {
-    OrderSuccessScreen(
-        onHomeClick = {}
-    )
-}
+//@Preview
+//@Composable
+//fun OrderSuccessPreview() {
+//    OrderSuccessScreen(
+//        onHomeClick = {}
+//    )
+//}

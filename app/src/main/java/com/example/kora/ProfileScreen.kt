@@ -26,6 +26,7 @@ import androidx.compose.material.icons.filled.HeadsetMic
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedButton
@@ -44,6 +45,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.kora.data.auth.AuthViewModel
 import com.example.kora.ui.theme.KoraBackground
 import com.example.kora.ui.theme.KoraButton
+import com.example.kora.ui.theme.KoraCard
 import com.example.kora.ui.theme.KoraText
 
 @Composable
@@ -119,6 +121,7 @@ fun ProfileScreen(
         }
         Spacer(modifier = Modifier.height(32.dp ))
         ProfileOptionItem(icon = Icons.Default.ShoppingCart, title = "Orders", subtitle = "Track and Manage your deliveries")
+        ProfileOptionItem(icon = Icons.Outlined.LocationOn, title = "Address", subtitle = "Manage Your Delivery Addresses")
         ProfileOptionItem(icon = Icons.Default.Notifications, title = "Notifications", subtitle = "Customize Your Alerts")
         ProfileOptionItem(icon = Icons.Default.HeadsetMic, title = "Help & Support", subtitle = "Get Assistance and find answers")
         ProfileOptionItem(icon = Icons.Default.Description, title = "Terms & Policies", subtitle = "Read Our Guidelines and Policies")

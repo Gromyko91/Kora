@@ -1,4 +1,4 @@
-package com.example.kora
+package com.example.kora.data.model
 
 data class OrderData(
     val id: String,

@@ -117,18 +117,29 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.outlined.AccessTime
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.LocationOn
+import androidx.compose.material.icons.outlined.Money
+import androidx.compose.material.icons.outlined.Smartphone
 import androidx.compose.material.icons.outlined.Store
 import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.tooling.preview.Preview
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.example.kora.data.admin.AdminOrderUiState
 import com.example.kora.data.model.Dish
+import com.example.kora.data.model.Order
+import com.example.kora.data.model.OrderItem
 import com.example.kora.data.model.Restaurant
 import com.example.kora.ui.theme.KoraBox
 import com.example.kora.ui.theme.KoraCard
@@ -415,7 +426,9 @@ fun AdminStatCard(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color(0xFFAFA59B))
     ) {
-        Box(modifier = Modifier.fillMaxSize().padding(12.dp)) {
+        Box(modifier = Modifier
+            .fillMaxSize()
+            .padding(12.dp)) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
@@ -464,15 +477,15 @@ fun QuickActionButton(
 
 @Composable
 fun AdminOrderCard(
-    orderId: String,
-    name: String,
-    restaurant: String,
-    items: String,
-    time: String,
-    amount: String,
-    status: String,
-    onActionClick: () -> Unit
+    orderData: AdminOrderUiState,
+    onAccept: () -> Unit,
+    onReject: () -> Unit,
+    onViewDetails: () -> Unit
 ) {
+    val status = orderData.order.status
+    val isPending = status == "pending"
+    val isCompleted = status in listOf("Delivered", "Completed", "Cancelled")
+
     val statusColor = when (status) {
         "Processing" -> Color(0xFF81C784)
         "Completed" -> Color(0xFF81C784)
@@ -480,31 +493,37 @@ fun AdminOrderCard(
         else -> Color.Gray
     }
     Card(
-        modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 16.dp)
+            .clickable(enabled = !isCompleted) { onViewDetails() },
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = KoraBackground),
+        colors = CardDefaults.cardColors(containerColor = KoraCard),
         border = BorderStroke(1.dp, KoraText)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-                Text(text = "ORDER #$orderId", fontSize = 12.sp, color = Color.Gray)
-                SuggestionChip(
-                    onClick = {},
-                    label = { Text(status, fontSize = 10.sp) },
-                    colors = SuggestionChipDefaults.suggestionChipColors(
-                        containerColor = KoraBackground,
-                        labelColor = statusColor
-                    ),
-                    border = BorderStroke(1.dp, statusColor),
-                    modifier = Modifier.height(24.dp)
-                )
+                Text(text = "ORDER #${orderData.order.id}", fontSize = 12.sp, color = Color.Gray)
+                Surface(
+                    color = statusColor.copy(alpha = 0.1f),
+                    shape = RoundedCornerShape(4.dp),
+                    border = BorderStroke(1.dp, statusColor.copy(alpha = 0.5f))
+                ) {
+                    Text(
+                        text = status.uppercase(),
+                        fontSize = 10.sp,
+                        color = statusColor,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    )
+                }
             }
             Spacer(modifier = Modifier.height(4.dp))
-            Text(text = name, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = KoraText)
+            Text(text = orderData.customerName, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = KoraText)
 
             Spacer(modifier = Modifier.height(4.dp))
             Row {
-                Text(text = "$restaurant  •  $items  •  $time", fontSize = 12.sp, color = Color.Gray)
+                Text(text = "${orderData.restaurantName}  •  ${orderData.itemCount} Items  •  ${orderData.formattedTime}", fontSize = 12.sp, color = Color.Gray)
             }
             HorizontalDivider(
                 modifier = Modifier.padding(vertical = 12.dp),
@@ -518,19 +537,19 @@ fun AdminOrderCard(
             ) {
                 Column {
                     Text(text = "Total Amount", fontSize = 10.sp, color = Color.Gray)
-                    Text(text = amount, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = KoraText)
+                    Text(text = "ksh ${orderData.order.total}", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = KoraText)
                 }
                 if (status == "Pending") {
                     Row {
                         IconButton(
-                            onClick = { },
+                            onClick = onReject,
                             modifier = Modifier.background(Color(0xFFFFCDD2), RoundedCornerShape(8.dp))
                         ) {
                             Icon(Icons.Rounded.Close, contentDescription = "Reject", tint = Color.Red)
                         }
                         Spacer(modifier = Modifier.width(8.dp))
                         Button(
-                            onClick = onActionClick,
+                            onClick = onAccept,
                             colors = ButtonDefaults.buttonColors(containerColor = KoraText),
                             shape = RoundedCornerShape(8.dp),
                             contentPadding = PaddingValues(horizontal = 16.dp)
@@ -540,7 +559,7 @@ fun AdminOrderCard(
                     }
                 } else {
                     Button(
-                        onClick = onActionClick,
+                        onClick = onViewDetails,
                         colors = ButtonDefaults.buttonColors(containerColor = if(status == "Processing") Color(0xFF3E2C22) else KoraBackground),
                         border = if(status == "Processing") null else BorderStroke(1.dp, KoraText),
                         shape = RoundedCornerShape(8.dp)
@@ -690,6 +709,171 @@ fun UpdateStatusSheetContent(
     }
 }
 
+// Admin Order Sheet Content
+@Composable
+fun OrderDetailsSheetContent(
+    order: Order,
+//    currentStatus: String,
+    items: List<OrderItem>,
+    onUpdateStatus: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val isReadOnly = order.status in listOf("Delivered", "Cancelled", "Completed")
+    var selectedStatus by remember { mutableStateOf(order.status) }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(24.dp)
+            .heightIn(min = 300.dp, max = 600.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column {
+                Text("Order Details", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = KoraText)
+                Text("Order #${order.id}", fontSize = 14.sp, color = Color.Gray)
+            }
+            IconButton(onClick = onDismiss) {
+                Icon(Icons.Default.Close, null, tint = KoraText)
+            }
+        }
+        HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
+
+        Card(
+            colors = CardDefaults.cardColors(containerColor = Color(0xFFF9F9F9)),
+            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
+        ) {
+            Row(
+                modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text("Payment Method", fontSize = 12.sp, color = KoraAccent)
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = when(order.paymentMethod) {
+                                "Cash" -> Icons.Outlined.Money
+                                "Mpesa" -> Icons.Outlined.Smartphone
+                                else -> Icons.Outlined.CreditCard
+                            },
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                            tint = KoraText
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(order.paymentMethod, fontWeight = FontWeight.Bold, color = KoraText)
+                    }
+                }
+
+                Column(horizontalAlignment = Alignment.End) {
+                    Text("Payment Status", fontSize = 12.sp, color = Color.Gray)
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Surface(
+                        color = if (order.paymentStatus == "Paid") Color(0xFFE8F5E9) else Color(
+                            0xFFFFEBEE
+                        ),
+                        shape = RoundedCornerShape(4.dp)
+                    ) {
+                        Text(
+                            text = order.paymentStatus.uppercase(),
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 12.sp,
+                            color = if (order.paymentStatus == "Paid") Color(0xFF2E7D32) else Color(
+                                0xFFC62828
+                            ),
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        )
+                    }
+                }
+            }
+        }
+
+        Text("Items (${items.size}", fontWeight = FontWeight.Bold, color = KoraText, modifier = Modifier.padding(bottom = 8.dp))
+
+        LazyColumn(
+            modifier = Modifier.weight(1f)
+        ) {
+            items(items) { item ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(50.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(Color.LightGray.copy(0.2f))
+                    ) {
+                        AsyncImage(
+                            model = item.imageUrl,
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(item.name, fontWeight = FontWeight.Bold, color = KoraText)
+                        Text("${item.quantity}x", fontSize = 12.sp, color = Color.Gray)
+                    }
+
+                    Text(
+                        text = "Ksh ${item.price * item.quantity}",
+                        fontWeight = FontWeight.Bold,
+                        color = KoraText
+                    )
+                }
+            }
+        }
+
+        if (!isReadOnly) {
+            HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
+            Text("Update Status", fontWeight = FontWeight.Bold, color = KoraText, modifier = Modifier.padding(bottom = 12.dp))
+
+            val statuses = listOf("Preparing", "Out for Delivery", "Delivered")
+
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                statuses.forEach { status ->
+                    val isSelected = selectedStatus == status
+
+                    FilterChip(
+                        selected = isSelected,
+                        onClick = { selectedStatus = status },
+                        label = { Text(status) },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = KoraButton,
+                            selectedLabelColor = KoraBackground
+                        )
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Button(
+                onClick = { onUpdateStatus(selectedStatus) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = KoraButton)
+            ) {
+                Text("Update Status")
+            }
+        }
+    }
+}
+
+
 //Restaurants Screen - Admin
 @Composable
 fun RestaurantCard(
@@ -778,7 +962,9 @@ fun RestaurantCard(
                     onClick = onEditClick,
                     shape = RoundedCornerShape(8.dp),
                     border = BorderStroke(1.dp, Color.LightGray),
-                    modifier = Modifier.weight(1f).height(40.dp)
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(40.dp)
                 ) {
                     Icon(Icons.Outlined.Edit, contentDescription = null, tint = KoraText, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(8.dp))
@@ -789,7 +975,9 @@ fun RestaurantCard(
                     onClick = onDeleteClick,
                     shape = RoundedCornerShape(8.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFEBEE)),
-                    modifier = Modifier.weight(1f).height(40.dp)
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(40.dp)
                 ) {
                     Icon(Icons.Outlined.Delete, contentDescription = null, tint = Color.Red, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(8.dp))
@@ -883,7 +1071,9 @@ fun DishItemRow(
                         modifier = Modifier.fillMaxSize()
                     )
                 } else {
-                    Box(modifier = Modifier.fillMaxSize().background(Color.Gray.copy(0.2f)))
+                    Box(modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Gray.copy(0.2f)))
                 }
             }
             Spacer(modifier = Modifier.width(16.dp))
@@ -1123,7 +1313,9 @@ fun AddCardSheetContent(
             onClick = { onSave(cardNumber, cardType) },
             colors = ButtonDefaults.buttonColors(containerColor = KoraButton),
             shape = RoundedCornerShape(12.dp),
-            modifier = Modifier.fillMaxWidth().height(56.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp)
         ) {
             Text("Save Card", fontWeight = FontWeight.Bold)
         }
@@ -1250,7 +1442,7 @@ fun getCurrentLocation(
     fusedLocationClient.lastLocation
         .addOnSuccessListener { location: Location? ->
             if (location != null) {
-                onLocationReceived(location.latitude, location.latitude)
+                onLocationReceived(location.latitude, location.longitude)
             }
         }
         .addOnFailureListener {
@@ -1409,7 +1601,9 @@ fun FavouriteRestaurantCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column {
-            Box(modifier = Modifier.height(160.dp).fillMaxWidth()) {
+            Box(modifier = Modifier
+                .height(160.dp)
+                .fillMaxWidth()) {
                 AsyncImage(
                     model = ImageRequest.Builder(LocalContext.current)
                         .data(restaurant.imageUrl)
@@ -1516,7 +1710,9 @@ fun FavouriteRestaurantCard(
                     onClick = onNavigateToDetails,
                     colors = ButtonDefaults.buttonColors(containerColor = KoraAccent),
                     shape = RoundedCornerShape(8.dp),
-                    modifier = Modifier.weight(1f).height(45.dp)
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(45.dp)
                 ) {
                     Text("Order Again", color = Color.White, fontWeight = FontWeight.Bold)
                 }
@@ -1526,7 +1722,9 @@ fun FavouriteRestaurantCard(
                     onClick = onRemoveClick,
                     shape = RoundedCornerShape(8.dp),
                     border = BorderStroke(1.dp, Color.LightGray.copy(alpha = 0.5f)),
-                    modifier = Modifier.width(100.dp).height(45.dp)
+                    modifier = Modifier
+                        .width(100.dp)
+                        .height(45.dp)
                 ) {
                     Text("Remove", color = KoraAccent, fontSize = 12.sp)
                 }

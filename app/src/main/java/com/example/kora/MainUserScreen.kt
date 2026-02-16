@@ -16,10 +16,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.kora.data.cart.CartViewModel
 import com.example.kora.ui.theme.KoraBackground
 
@@ -43,7 +45,7 @@ fun MainScreenUser(
     // hide Bottom Bar Logic
     val showBottomBar = when {
         currentRoute == "checkout" -> false
-        currentRoute == "order_success" -> false
+        currentRoute?.startsWith("order_success") == true -> false
         currentRoute?.startsWith("restaurant_details_user") == true -> false
         else -> true
     }
@@ -107,12 +109,25 @@ fun MainScreenUser(
             }
             composable("checkout") {
                 CheckoutScreen(
+                    cartViewModel = sharedCartViewModel,
                     onBackClick = { bottomNavController.popBackStack() },
-                    onPlaceOrderClick = { bottomNavController.navigate("order_success") }
+                    onPlaceOrderClick = {  orderId, estTime ->
+                        bottomNavController.navigate("order_success/$orderId/$estTime")
+                    }
                 )
             }
-            composable("order_success") {
+            composable(
+                route = "order_success/{orderId}/{estTime}",
+                arguments = listOf(
+                    navArgument("orderId") { type = NavType.StringType },
+                    navArgument("estTime") { type = NavType.StringType }
+                )
+            ) { backStackEntry ->
+                val orderId = backStackEntry.arguments?.getString("orderId") ?: "Unknown"
+                val estTime = backStackEntry.arguments?.getString("estTime") ?: "N/A"
                 OrderSuccessScreen(
+                    orderId = orderId,
+                    estTime = estTime,
                     onHomeClick = {
                         bottomNavController.navigate("home") {
                             popUpTo("home") { inclusive = true }
