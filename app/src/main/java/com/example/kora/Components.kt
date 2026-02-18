@@ -1460,6 +1460,12 @@ fun UserRestaurantCard(
     ) {
     val isOpen = TimeUtils.isRestaurantOpen(restaurant.openingTime, restaurant.closingTime)
 
+    val statusText = if (isOpen) {
+        "Closes at ${restaurant.closingTime}"
+    } else {
+        "Opens at ${restaurant.openingTime}"
+    }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -1557,7 +1563,7 @@ fun UserRestaurantCard(
                     }
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "Closes at ${restaurant.closingTime}",
+                        text = statusText,
                         color = KoraAccent,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Medium

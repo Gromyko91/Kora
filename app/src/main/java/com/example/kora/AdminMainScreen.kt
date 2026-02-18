@@ -40,6 +40,7 @@ fun AdminMainScreen(
 
     val showBottomBar = when {
         currentRoute == "add_restaurant" -> false
+        currentRoute == "all_activities" -> false
         currentRoute?.startsWith("restaurant_details") == true -> false
         currentRoute?.startsWith("add_dish") == true -> false
         else -> true
@@ -63,7 +64,16 @@ fun AdminMainScreen(
             modifier = Modifier.padding(innerPadding)
         )  {
             composable("dashboard") {
-                AdminDashboard()
+                AdminDashboard(
+                    onAddRestaurantClick = { adminNavController.navigate("add_restaurant") },
+                    onViewAllActivitiesClick = { adminNavController.navigate("all_activities") }
+                )
+            }
+
+            composable("all_activities") {
+                AllActivitesScreen(
+                    onBackClick = { adminNavController.popBackStack() }
+                )
             }
             composable("orders") {
                 AdminOrdersScreen()

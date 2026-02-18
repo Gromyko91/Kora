@@ -245,7 +245,7 @@ fun AddDishScreen(
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedContainerColor = KoraBackground,
                         unfocusedContainerColor = KoraBackground,
-                        focusedBorderColor = KoraText,
+                        focusedBorderColor = KoraButton,
                         unfocusedBorderColor = KoraText.copy(alpha = 0.5f)
                     ),
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = categoryExpanded) }
@@ -253,7 +253,7 @@ fun AddDishScreen(
                 ExposedDropdownMenu(
                     expanded = categoryExpanded,
                     onDismissRequest = { categoryExpanded = false },
-                    modifier = Modifier.background(KoraBackground)
+                    modifier = Modifier.background(KoraCard)
                 ) {
                     categories.forEach { category ->
                         DropdownMenuItem(
@@ -315,7 +315,8 @@ fun AddDishScreen(
                 )
                 ExposedDropdownMenu(
                     expanded = prepTimeExpanded,
-                    onDismissRequest = { prepTimeExpanded = false }
+                    onDismissRequest = { prepTimeExpanded = false },
+                    modifier = Modifier.background(KoraCard)
                 ) {
                     prepTimeOptions.forEach { time ->
                         DropdownMenuItem(
