@@ -3,6 +3,7 @@ package com.example.kora.data.admin
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.kora.data.model.AppNotification
 import com.example.kora.data.model.Order
 import com.example.kora.data.model.OrderItem
 import com.google.firebase.firestore.FirebaseFirestore
@@ -130,9 +131,38 @@ class AdminOrderViewModel : ViewModel() {
     fun updateStatus(orderId: String, newStatus: String) {
         viewModelScope.launch {
             try {
-                db.collection("orders").document(orderId)
-                    .update("status", newStatus)
-                    .await()
+                val orderSnapshot = db.collection("orders").document(orderId).get().await()
+                val targetUserId = orderSnapshot.getString("userId") ?: return@launch
+
+                val batch = db.batch()
+                val orderRef = db.collection("orders").document(orderId)
+                batch.update(orderRef, "status", newStatus)
+
+                val notifId = db.collection("notifications").document().id
+                val notifRef = db.collection("notifications").document(notifId)
+
+                val (title, message, type) = when(newStatus) {
+                    "Pending" -> Triple("Order Accepted", "Restaurant has confirmed Order #$orderId.", "ORDER_ACCEPTED")
+                    "Preparing" -> Triple("Being Prepared", "The kitchen has started preparing your order.", "PREPARING")
+                    "Out for Delivery" -> Triple("Out for Delivery", "Your driver is nearby.", "OUT_FOR_DELIVERY")
+                    "Delivered" -> Triple("Order Delivered", "Enjoy your meal! Don't forget to rate your driver.", "DELIVERED")
+                    "Cancelled" -> Triple("Order Cancelled", "Unfortunately, your order #$orderId was cancelled.", "CANCELLED")
+                    else -> Triple("Order Update", "Your order status is now $newStatus", "SYSTEM")
+                }
+
+                val notification = AppNotification(
+                    id = notifId,
+                    targetUserId = targetUserId,
+                    title = title,
+                    message = message,
+                    type = type,
+                    referenceId = orderId,
+                    isRead = false,
+                    createdAt = System.currentTimeMillis()
+                )
+
+                batch.set(notifRef, notification)
+                batch.commit().await()
 
                 fetchAllOrders()
             } catch (e: Exception) {

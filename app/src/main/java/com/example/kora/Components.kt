@@ -130,6 +130,8 @@ import androidx.compose.material.icons.outlined.Money
 import androidx.compose.material.icons.outlined.Smartphone
 import androidx.compose.material.icons.outlined.Store
 import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.ui.graphics.Brush
@@ -209,6 +211,21 @@ fun PhoneInputRow(
     onPhoneNumberChange: (String) -> Unit,
     isError: Boolean = false
 ) {
+    val eastAfricanCountries = listOf(
+        Country("Kenya", "+254"),
+        Country("Uganda", "+256"),
+        Country("Tanzania", "+255"),
+        Country("Rwanda", "+250"),
+        Country("Burundi", "+257"),
+        Country("South Sudan", "+211"),
+        Country("Ethiopia", "+251"),
+        Country("Somalia", "+252"),
+        Country("Djibouti", "+253"),
+        Country("Eritrea", "+291")
+    )
+
+    var expanded by remember { mutableStateOf(false) }
+
     Column {
         Text(
             text = "Phone",
@@ -218,28 +235,50 @@ fun PhoneInputRow(
             modifier = Modifier.padding(bottom = 4.dp)
         )
         Row(modifier = Modifier.fillMaxWidth()) {
-            OutlinedTextField(
-                value = countryCode,
-                onValueChange = { if (it.length <= 4) onCountryCodeChange(it) },
-                placeholder = { Text("+254", color = KoraText.copy(alpha = 0.7f)) },
+//            OutlinedTextField(
+//                value = countryCode,
+//                onValueChange = { if (it.length <= 4) onCountryCodeChange(it) },
+//                placeholder = { Text("+254", color = KoraText.copy(alpha = 0.7f)) },
+//                modifier = Modifier
+//                    .width(80.dp)
+//                    .padding(end = 8.dp),
+//                shape = RoundedCornerShape(12.dp),
+//                isError = isError,
+//                colors = OutlinedTextFieldDefaults.colors(
+//                    focusedContainerColor = KoraBackground,
+//                    unfocusedContainerColor = KoraBackground,
+//                    focusedBorderColor = KoraText,
+//                    unfocusedBorderColor = KoraText,
+//                    errorBorderColor = MaterialTheme.colorScheme.error,
+//                    cursorColor = KoraText,
+//                    focusedTextColor = KoraText,
+//                    unfocusedTextColor = KoraText
+//                ),
+//                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+//                singleLine = true
+//            )
+            DropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false },
                 modifier = Modifier
-                    .width(80.dp)
-                    .padding(end = 8.dp),
-                shape = RoundedCornerShape(12.dp),
-                isError = isError,
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = KoraBackground,
-                    unfocusedContainerColor = KoraBackground,
-                    focusedBorderColor = KoraText,
-                    unfocusedBorderColor = KoraText,
-                    errorBorderColor = MaterialTheme.colorScheme.error,
-                    cursorColor = KoraText,
-                    focusedTextColor = KoraText,
-                    unfocusedTextColor = KoraText
-                ),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                singleLine = true
-            )
+                    .fillMaxWidth()
+                    .background(KoraCard)
+            ) {
+                eastAfricanCountries.forEach { country ->
+                    DropdownMenuItem(
+                        text = {
+                            Text(
+                                text = "${country.name} (${country.code})",
+                                color = KoraText
+                            )
+                        },
+                        onClick = {
+                            onCountryCodeChange(country.code)
+                            expanded = false
+                        }
+                    )
+                }
+            }
             OutlinedTextField(
                 value = phoneNumber,
                 onValueChange = onPhoneNumberChange,
@@ -262,6 +301,11 @@ fun PhoneInputRow(
         }
     }
 }
+
+data class Country(
+    val name: String,
+    val code: String
+)
 
 // Cart Items
 @Composable

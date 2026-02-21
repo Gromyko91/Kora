@@ -1,10 +1,14 @@
 package com.example.kora
 
+import android.Manifest
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContract
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,10 +19,10 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -53,6 +57,38 @@ fun KoraApp() {
         scope.launch {
             snackbarHostState.showSnackbar(message)
         }
+    }
+
+    val permissionsToRequest = remember {
+        mutableListOf(
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.ACCESS_COARSE_LOCATION
+        ).apply {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                add(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }.toTypedArray()
+    }
+
+    val permisionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissionsMap ->
+        val locationGranted = permissionsMap[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
+        permissionsMap[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+
+        val notificationsGranted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            permissionsMap[Manifest.permission.POST_NOTIFICATIONS] == true
+        } else {
+            true
+        }
+
+        if (!locationGranted || !notificationsGranted) {
+            showMessage("Some features like adresses and alerts may not work fully.")
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        permisionLauncher.launch(permissionsToRequest)
     }
 
     Scaffold(

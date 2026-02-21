@@ -35,7 +35,7 @@ fun AdminMainScreen(
         BottomNavItemData("dashboard", Icons.Filled.Dashboard, "Home", activeColor = Color(0xFF3C2A21)),
         BottomNavItemData("orders", Icons.Filled.ShoppingBag, "Orders", activeColor = Color(0xFF3C2A21)),
         BottomNavItemData("restaurant", Icons.Outlined.Store, "Restaurants", activeColor = Color(0xFF3C2A21)),
-        BottomNavItemData("profile", Icons.Filled.Person, "Profile", activeColor = Color(0xFF3C2A21))
+        BottomNavItemData("admin-profile", Icons.Filled.Person, "Profile", activeColor = Color(0xFF3C2A21))
     )
 
     val showBottomBar = when {
@@ -112,11 +112,11 @@ fun AdminMainScreen(
                     onSaveClick = { adminNavController.popBackStack() }
                 )
             }
-            composable("profile") {
-                ProfileScreen(
+            composable("admin-profile") {
+                AdminProfileScreen(
                     onLogout = {
-                        adminNavController.navigate("login") {
-                            popUpTo(0) { inclusive = true}
+                        rootNavController.navigate("login") {
+                            popUpTo(0) { inclusive = true }
                         }
                     }
                 )
