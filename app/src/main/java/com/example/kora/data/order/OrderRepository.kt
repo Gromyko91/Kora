@@ -8,6 +8,7 @@ import com.example.kora.data.model.OrderItem
 import com.example.kora.data.model.Restaurant
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Query
 import kotlinx.coroutines.tasks.await
 import java.util.UUID
 import kotlin.random.Random
@@ -24,6 +25,20 @@ class OrderRepository {
         } catch (e: Exception) {
             Log.e(TAG, "Error fetching restaurant", e)
             null
+        }
+    }
+
+    suspend fun fetchUserOrders(userId: String) : List<Order> {
+        return try {
+            val snapshot = db.collection("orders")
+                .whereEqualTo("userId", userId)
+                .orderBy("createdAt", Query.Direction.DESCENDING)
+                .get()
+                .await()
+            snapshot.toObjects(Order::class.java)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error fetching user orders", e)
+            emptyList()
         }
     }
 

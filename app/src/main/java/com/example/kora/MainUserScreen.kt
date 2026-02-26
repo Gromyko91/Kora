@@ -45,6 +45,7 @@ fun MainScreenUser(
     // hide Bottom Bar Logic
     val showBottomBar = when {
         currentRoute == "checkout" -> false
+        currentRoute == "user_orders" -> false
         currentRoute?.startsWith("order_success") == true -> false
         currentRoute?.startsWith("restaurant_details_user") == true -> false
         else -> true
@@ -104,7 +105,13 @@ fun MainScreenUser(
                         rootNavController.navigate("login") {
                             popUpTo(0) { inclusive = true }
                         }
-                    }
+                    },
+                    onOrdersClick = { bottomNavController.navigate("user_orders") }
+                )
+            }
+            composable("user_orders") {
+                UserOrdersScreen(
+                    onBackClick = { bottomNavController.popBackStack() }
                 )
             }
             composable("checkout") {

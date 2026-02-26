@@ -50,7 +50,8 @@ import com.example.kora.ui.theme.KoraText
 
 @Composable
 fun ProfileScreen(
-    onLogout: () -> Unit
+    onLogout: () -> Unit,
+    onOrdersClick: () -> Unit
 ) {
     val viewModel: AuthViewModel = viewModel()
     val user by viewModel.currentUser.collectAsState()
@@ -120,7 +121,12 @@ fun ProfileScreen(
             Text("Edit Profile")
         }
         Spacer(modifier = Modifier.height(32.dp ))
-        ProfileOptionItem(icon = Icons.Default.ShoppingCart, title = "Orders", subtitle = "Track and Manage your deliveries")
+        ProfileOptionItem(
+            icon = Icons.Default.ShoppingCart,
+            title = "Orders",
+            subtitle = "Track and Manage your deliveries",
+            onClick = onOrdersClick
+        )
         ProfileOptionItem(icon = Icons.Outlined.LocationOn, title = "Address", subtitle = "Manage Your Delivery Addresses")
         ProfileOptionItem(icon = Icons.Default.Notifications, title = "Notifications", subtitle = "Customize Your Alerts")
         ProfileOptionItem(icon = Icons.Default.HeadsetMic, title = "Help & Support", subtitle = "Get Assistance and find answers")
@@ -135,6 +141,7 @@ fun ProfileOptionItem(
     icon: ImageVector,
     title: String,
     subtitle: String,
+//    isDestructive: Boolean = false,
     onClick: () -> Unit = {}
 ) {
     Row(

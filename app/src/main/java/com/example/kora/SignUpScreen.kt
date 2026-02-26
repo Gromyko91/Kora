@@ -36,6 +36,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -62,7 +63,7 @@ fun SignUpScreen(
     var firstName by remember { mutableStateOf("") }
     var lastName by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
-    var countryCode by remember { mutableStateOf("") }
+    var countryCode by remember { mutableStateOf("+254") }
     var phoneNumber by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var termsAccepted by remember { mutableStateOf(false) }
@@ -224,4 +225,14 @@ fun SignUpScreen(
             )
         }
     }
+}
+
+@Composable
+@Preview
+fun SignUpScreenPreview() {
+    SignUpScreen(
+        onSignUpClick = { },
+        onSignInClick = { },
+        onValidationError = {  }
+    )
 }

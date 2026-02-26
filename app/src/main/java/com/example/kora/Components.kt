@@ -115,6 +115,7 @@ import com.google.android.gms.location.FusedLocationProviderClient
 import android.location.Location
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.heightIn
@@ -235,50 +236,62 @@ fun PhoneInputRow(
             modifier = Modifier.padding(bottom = 4.dp)
         )
         Row(modifier = Modifier.fillMaxWidth()) {
-//            OutlinedTextField(
-//                value = countryCode,
-//                onValueChange = { if (it.length <= 4) onCountryCodeChange(it) },
-//                placeholder = { Text("+254", color = KoraText.copy(alpha = 0.7f)) },
-//                modifier = Modifier
-//                    .width(80.dp)
-//                    .padding(end = 8.dp),
-//                shape = RoundedCornerShape(12.dp),
-//                isError = isError,
-//                colors = OutlinedTextFieldDefaults.colors(
-//                    focusedContainerColor = KoraBackground,
-//                    unfocusedContainerColor = KoraBackground,
-//                    focusedBorderColor = KoraText,
-//                    unfocusedBorderColor = KoraText,
-//                    errorBorderColor = MaterialTheme.colorScheme.error,
-//                    cursorColor = KoraText,
-//                    focusedTextColor = KoraText,
-//                    unfocusedTextColor = KoraText
-//                ),
-//                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-//                singleLine = true
-//            )
-            DropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false },
+            Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .background(KoraCard)
+                    .width(100.dp)
+                    .padding(end = 8.dp)
             ) {
-                eastAfricanCountries.forEach { country ->
-                    DropdownMenuItem(
-                        text = {
-                            Text(
-                                text = "${country.name} (${country.code})",
-                                color = KoraText
-                            )
-                        },
-                        onClick = {
-                            onCountryCodeChange(country.code)
-                            expanded = false
-                        }
-                    )
+                OutlinedTextField(
+                    value = countryCode,
+                    onValueChange = {  },
+                    readOnly = true,
+                    placeholder = { Text("+254", color = KoraText.copy(alpha = 0.7f)) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null
+                        ) { expanded = true },
+                    shape = RoundedCornerShape(12.dp),
+                    isError = isError,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = KoraBackground,
+                        unfocusedContainerColor = KoraBackground,
+                        focusedBorderColor = KoraText,
+                        unfocusedBorderColor = KoraText,
+                        errorBorderColor = MaterialTheme.colorScheme.error,
+                        cursorColor = KoraText,
+                        focusedTextColor = KoraText,
+                        unfocusedTextColor = KoraText
+                    ),
+                    singleLine = true,
+                    enabled = true,
+                    interactionSource = remember { MutableInteractionSource() }
+                )
+                DropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(KoraCard)
+                ) {
+                    eastAfricanCountries.forEach { country ->
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    text = "${country.name} (${country.code})",
+                                    color = KoraText
+                                )
+                            },
+                            onClick = {
+                                onCountryCodeChange(country.code)
+                                expanded = false
+                            }
+                        )
+                    }
                 }
             }
+
             OutlinedTextField(
                 value = phoneNumber,
                 onValueChange = onPhoneNumberChange,

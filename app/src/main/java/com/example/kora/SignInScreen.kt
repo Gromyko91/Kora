@@ -1,5 +1,6 @@
 package com.example.kora
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -27,6 +28,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -50,8 +52,12 @@ fun LoginScreen(
     val viewModel: AuthViewModel = viewModel()
     val authState by viewModel.authState.collectAsState()
 
+    val context = LocalContext.current
+
     var email by remember { mutableStateOf("") }
     var password by remember {mutableStateOf("")}
+
+    var errorMessageShown by remember { mutableStateOf(false) }
 
     LaunchedEffect(authState) {
         when (authState) {
@@ -59,11 +65,23 @@ fun LoginScreen(
                 val role = (authState as AuthState.Success).role
                 onLoginClick(role)
                 viewModel.resetState()
+                errorMessageShown = false
             }
             is AuthState.Error -> {
+                if (!errorMessageShown) {
+                    val errorMessage = (authState as AuthState.Error).message
+                    Toast.makeText(
+                        context,
+                        "Wrong credentials provided",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    errorMessageShown = true
+                }
                 viewModel.resetState()
             }
-            else -> {}
+            else -> {
+                errorMessageShown = false
+            }
         }
     }
 
@@ -123,17 +141,7 @@ fun LoginScreen(
                 Text(text = "Sign In", fontSize = 18.sp, fontWeight = FontWeight.Bold)
             }
         }
-        Spacer(modifier = Modifier.height(16.dp))
-//        Button(
-//            onClick = onAdminClick,
-//            colors = ButtonDefaults.buttonColors(containerColor = KoraButton),
-//            shape = RoundedCornerShape(16.dp),
-//            modifier = Modifier
-//                .fillMaxWidth()
-//                .height(56.dp)
-//        ) {
-//            Text(text = "To admin page", fontSize = 18.sp, fontWeight = FontWeight.Bold)
-//        }
+//        Spacer(modifier = Modifier.height(16.dp))
         Spacer(modifier = Modifier.height(24.dp))
         Row(
             modifier = Modifier.fillMaxWidth(),
