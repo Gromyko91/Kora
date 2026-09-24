@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "397131380904",
-    "project_id": "kora-bafed",
-    "storage_bucket": "kora-bafed.firebasestorage.app"
+    "project_number": "1061881963466",
+    "project_id": "kora-firebase-project",
+    "storage_bucket": "kora-firebase-project.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:397131380904:android:ae17ac02fee681bb582a9d",
+        "mobilesdk_app_id": "1:1061881963466:android:a806a94702e51e64742533",
         "android_client_info": {
           "package_name": "com.example.kora"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyDnVYqqq-TrqKVpwmWltFr1HI8WpyMUFeI"
+          "current_key": "AIzaSyAe1kurmNqjeCHVPDckBUQEVbN4k0_6qOc"
         }
       ],
       "services": {
